@@ -7,7 +7,14 @@ A 2D space flight simulator game. The player controls a rocket which can explore
 - Accurately simulate real orbital physics
 - Multiple planetary bodies
 - Player-controlled rocket
+- Clean visuals that are visually appealing
+- Start screen
+- Time acceleration
+- 
 
 ## Nice  to have list
-- thing 1
-- thing 2
+- Sound effects
+- Dynamic visuals based that react to small details of the game
+- Different rockets for the player to use
+- Custom building rockets
+- 
