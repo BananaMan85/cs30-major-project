@@ -9,12 +9,11 @@ A 2D space flight simulator game. The player controls a rocket which can explore
 - Player-controlled rocket
 - Clean visuals that are visually appealing
 - Start screen
-- Time acceleration
-- 
+- Sound effects
 
 ## Nice  to have list
-- Sound effects
 - Dynamic visuals based that react to small details of the game
 - Different rockets for the player to use
 - Custom building rockets
-- 
+- Variable view distance
+-Time acceleration
