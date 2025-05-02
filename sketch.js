@@ -1,4 +1,4 @@
-let G = 0.5;
+let G = 6.67 * 10**-11;
 let planets = [];
 let stations = [];
 let rocket;
@@ -7,7 +7,7 @@ let zoomLevel = 1; // New zoom variable
 function setup() {
   createCanvas(windowWidth, windowHeight);
   
-  let planet = new Planet(width / 2, height / 2, 100, 5000, 200);
+  let planet = new Planet(width / 2, height / 2, 6.37 * 10**6, 5.98 * 10**24, 6.37 * 10**6);
   planets.push(planet);
   
   // let moon = new Planet(width / 2 + 400, height / 2, 30, 1000, 80, planet, 500, 0.02);
@@ -21,6 +21,9 @@ function setup() {
 
 function draw() {
   background(0);
+  fill('red');
+  strokeWeight(2);
+  text(rocket.vel.mag(), 0, 50);
   
   translate(width / 2 - rocket.pos.x * zoomLevel, height / 2 - rocket.pos.y * zoomLevel);
   scale(zoomLevel); // Apply zoom
@@ -34,19 +37,19 @@ function draw() {
     station.draw();
   }
 
-  rocket.update();
-  rocket.checkLanding();
-  rocket.takeOff();
   rocket.draw();
   rocket.drawTrajectory();
   rocket.drawOrbitAssist();
+  rocket.update();
+  rocket.checkLanding();
+  rocket.takeOff();
   rocket.checkDocking();
 }
 
 // Zoom control
 function mouseWheel(event) {
-  zoomLevel *= event.delta > 0 ? 0.9 : 1.1; // Zoom in/out smoothly
-  zoomLevel = constrain(zoomLevel, 0.1, 3); // Set zoom limits
+  zoomLevel *= event.delta > 0 ? 0.5 : 2; // Zoom in/out smoothly
+  zoomLevel = constrain(zoomLevel, 0.00000001, 3); // Set zoom limits
 }
 
 // --------- PLANET CLASS -------------
@@ -101,8 +104,8 @@ class Rocket {
     this.vel = createVector(0, 0);
     this.acc = createVector(0, 0);
     this.angle = -PI / 2;
-    this.thrustPower = 0.2;
-    this.fuel = 100;
+    this.thrustPower = 100;
+    this.fuel = Infinity;
     this.landed = false;
   }
 
@@ -212,13 +215,14 @@ class Rocket {
     
       stroke(255, 255, 0);
       noFill();
+      strokeWeight(1/zoomLevel);
       beginShape();
     
       let lastClosePos = tempPos.copy();
       let loopCompleted = false;
       let steps = 0;
     
-      while (!loopCompleted && steps < 5000) {
+      while (!loopCompleted && steps < 10000) {
         tempAcc.set(0, 0);
     
         for (let moon of futureMoons) {
