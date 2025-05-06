@@ -274,7 +274,7 @@ class Rocket {
       vertex(tempPos.x, tempPos.y);
       
       // Check if we've completed an orbit or close to it
-      if (steps > 100 && p5.Vector.dist(tempPos, this.pos) < 10) {
+      if (steps > 100 && p5.Vector.dist(tempPos, this.pos) < 10/min(zoomLevel, 1)) {
         console.log('here');
         break;
       }
