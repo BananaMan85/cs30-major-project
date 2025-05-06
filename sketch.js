@@ -7,7 +7,7 @@ let zoomLevel = 1; // New zoom variable
 function setup() {
   createCanvas(windowWidth, windowHeight);
   
-  let planet = new Planet(width / 2, height / 2, 6.37 * 10**6, 5.98 * 10**24, 6.37 * 10**6);
+  let planet = new Planet(width / 2, height / 2, 6.37 * 10**6, 5.98 * 10**24, 6.37 * 10**6 + 70000);
   planets.push(planet);
   
   // let moon = new Planet(width / 2 + 400, height / 2, 30, 1000, 80, planet, 500, 0.02);
@@ -111,7 +111,13 @@ class Rocket {
 
   applyGravity(planet) {
     let force = p5.Vector.sub(planet.pos, this.pos);
-    let distance = constrain(force.mag(), planet.radius, 1000);
+    let distance = force.mag();
+    
+    // Only avoid division by zero, but don't artificially constrain gravity
+    if (distance < planet.radius) {
+      return; // Skip if inside planet (should be handled by collision)
+    }
+    
     let strength = (G * planet.mass) / (distance * distance);
     force.setMag(strength);
     this.acc.add(force);
@@ -206,58 +212,102 @@ class Rocket {
   }
 
   drawTrajectory() {
-    Rocket.prototype.drawTrajectory = function () {
-      let tempPos = this.pos.copy();
-      let tempVel = this.vel.copy();
-      let tempAcc = createVector(0, 0);
-      let futureMoons = planets.map(p => p.orbiting ? Object.assign({}, p) : null);
-      let maxDistance = planets[0].radius * 20; // Stop if too far from main planet
+    // Create temporary variables for simulation
+    let tempPos = this.pos.copy();
+    let tempVel = this.vel.copy();
+    let tempAcc = createVector(0, 0);
     
-      stroke(255, 255, 0);
-      noFill();
-      strokeWeight(1/zoomLevel);
-      beginShape();
+    // Track positions of orbiting bodies
+    let futurePlanetPositions = planets.map((p, index) => ({
+      pos: p.pos.copy(),
+      mass: p.mass,
+      radius: p.radius,
+      orbiting: p.orbiting,
+      orbitCenter: p.orbitCenter ? { index: planets.indexOf(p.orbitCenter) } : null,
+      orbitRadius: p.orbitRadius,
+      orbitSpeed: p.orbitSpeed,
+      orbitAngle: p.orbitAngle
+    }));
     
-      let lastClosePos = tempPos.copy();
-      let loopCompleted = false;
-      let steps = 0;
+    // Set limits for the trajectory prediction
+    let maxSteps = 50000;
+    let maxDistance = planets[0].radius * 30;
     
-      while (!loopCompleted && steps < 10000) {
-        tempAcc.set(0, 0);
+    stroke(255, 255, 0);
+    noFill();
+    strokeWeight(1/zoomLevel);
+    beginShape();
     
-        for (let moon of futureMoons) {
-          if (moon) {
-            moon.orbitAngle += moon.orbitSpeed;
-            moon.pos.x = moon.orbitCenter.pos.x + cos(moon.orbitAngle) * moon.orbitRadius;
-            moon.pos.y = moon.orbitCenter.pos.y + sin(moon.orbitAngle) * moon.orbitRadius;
-          }
-        }
+    // Use Velocity Verlet integration for better energy conservation
+    let dt = 5.00; // Smaller time step for accuracy
     
-        for (let planet of planets) {
-          let force = p5.Vector.sub(planet.pos, tempPos);
-          let distance = constrain(force.mag(), planet.radius, 1000);
-          let strength = (G * planet.mass) / (distance * distance);
-          force.setMag(strength);
-          tempAcc.add(force);
-        }
-    
-        tempVel.add(tempAcc);
-        tempPos.add(tempVel);
-        vertex(tempPos.x, tempPos.y);
-        steps++;
-    
-        // Check if it's looping back close to the original position
-        if (p5.Vector.dist(tempPos, this.pos) < 10 && steps > 50) {
-          loopCompleted = true;
-        }
-    
-        // Stop if going too far from the main planet
-        if (p5.Vector.dist(tempPos, planets[0].pos) > maxDistance) {
-          break;
+    // Draw trajectory
+    for (let steps = 0; steps < maxSteps; steps++) {
+      // Update positions of orbiting bodies
+      for (let i = 0; i < futurePlanetPositions.length; i++) {
+        let planet = futurePlanetPositions[i];
+        if (planet.orbiting) {
+          planet.orbitAngle += planet.orbitSpeed;
+          let centerPlanet = futurePlanetPositions[planet.orbitCenter.index];
+          planet.pos.x = centerPlanet.pos.x + cos(planet.orbitAngle) * planet.orbitRadius;
+          planet.pos.y = centerPlanet.pos.y + sin(planet.orbitAngle) * planet.orbitRadius;
         }
       }
-      endShape();
-    };    
+      
+      // Velocity Verlet integration
+      // Calculate current acceleration
+      let acc = this.calculateAcceleration(tempPos, futurePlanetPositions);
+      
+      // Update position: x(t+dt) = x(t) + v(t)*dt + 0.5*a(t)*dt^2
+      let halfAccStep = p5.Vector.mult(acc, 0.5 * dt * dt);
+      let velStep = p5.Vector.mult(tempVel, dt);
+      tempPos.add(p5.Vector.add(velStep, halfAccStep));
+      
+      // Calculate new acceleration
+      let newAcc = this.calculateAcceleration(tempPos, futurePlanetPositions);
+      
+      // Update velocity: v(t+dt) = v(t) + 0.5*[a(t) + a(t+dt)]*dt
+      let avgAcc = p5.Vector.add(acc, newAcc).mult(0.5 * dt);
+      tempVel.add(avgAcc);
+      
+      // Add point to trajectory
+      vertex(tempPos.x, tempPos.y);
+      
+      // Check if we've completed an orbit or close to it
+      if (steps > 100 && p5.Vector.dist(tempPos, this.pos) < 10) {
+        console.log('here');
+        break;
+      }
+      
+      // Stop if going too far from the main planet or hitting the planet
+      if (p5.Vector.dist(tempPos, planets[0].pos) > maxDistance || p5.Vector.dist(tempPos, planets[0].pos) < planets[0].radius) {
+        break;
+      }
+    }
+    
+    endShape();
+  }
+
+  // Helper method to calculate acceleration at a point
+  calculateAcceleration(position, planetsList) {
+    let acceleration = createVector(0, 0);
+    
+    for (let planet of planetsList) {
+      let force = p5.Vector.sub(planet.pos, position);
+      let distance = force.mag();
+      
+      // Don't constrain distance for trajectory calculation
+      // Only avoid division by zero
+      if (distance < planet.radius) {
+        continue;
+      }
+      
+      let strength = (G * planet.mass) / (distance * distance);
+      force.setMag(strength);
+      acceleration.add(force);
+    }
+    
+    return acceleration;
   }
 
   checkDocking() {
