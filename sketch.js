@@ -111,11 +111,11 @@ class Rocket {
 
   applyGravity(planet) {
     let force = p5.Vector.sub(planet.pos, this.pos);
-    let distance = force.mag();
+    let distance = force.mag(); 
     
-    // Only avoid division by zero, but don't artificially constrain gravity
+    // Only avoid division by zero
     if (distance < planet.radius) {
-      return; // Skip if inside planet (should be handled by collision)
+      return; // Skip if inside planet
     }
     
     let strength = (G * planet.mass) / (distance * distance);
@@ -239,7 +239,7 @@ class Rocket {
     beginShape();
     
     // Use Velocity Verlet integration for better energy conservation
-    let dt = 5.00; // Smaller time step for accuracy
+    let dt = 5.00;
     
     // Draw trajectory
     for (let steps = 0; steps < maxSteps; steps++) {
@@ -275,7 +275,6 @@ class Rocket {
       
       // Check if we've completed an orbit or close to it
       if (steps > 100 && p5.Vector.dist(tempPos, this.pos) < 10/min(zoomLevel, 1)) {
-        console.log('here');
         break;
       }
       
