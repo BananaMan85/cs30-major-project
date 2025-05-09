@@ -237,6 +237,7 @@ class Rocket {
     noFill();
     strokeWeight(1/zoomLevel);
     beginShape();
+    vertex(this.pos.x, this.pos.y);
     
     // Use Velocity Verlet integration for better energy conservation
     let dt = 5.00;
@@ -274,12 +275,15 @@ class Rocket {
       vertex(tempPos.x, tempPos.y);
       
       // Check if we've completed an orbit or close to it
-      if (steps > 100 && p5.Vector.dist(tempPos, this.pos) < 10/min(zoomLevel, 1)) {
+      if (steps > 100 && p5.Vector.dist(tempPos, this.pos) < 100000) {
+        vertex(this.pos.x, this.pos.y);
+        console.log(steps);
         break;
       }
       
       // Stop if going too far from the main planet or hitting the planet
       if (p5.Vector.dist(tempPos, planets[0].pos) > maxDistance || p5.Vector.dist(tempPos, planets[0].pos) < planets[0].radius) {
+        console.log(steps);
         break;
       }
     }
