@@ -7,13 +7,16 @@ let zoomLevel = 1; // New zoom variable
 function setup() {
   createCanvas(windowWidth, windowHeight);
   
-  let planet = new Planet(width / 2, height / 2, 6.37 * 10**6, 5.98 * 10**24, 6.37 * 10**6 + 70000);
-  planets.push(planet);
-  
+  let earth = new Planet(width / 2, height / 2, 6.37 * 10**6, 5.98 * 10**24, 6.37 * 10**6 + 70000);
+  planets.push(earth);
+
+  let moon = new Planet (earth.pos.x + 3.844 * 10 ** 8, earth.pos.y + 3.844 * 10 ** 8, 1.7374 * 10 ** 6, 7.34767309 * 10 ** 22, 0, earth, 3.844 * 10 ** 8, 1.022 * 10 ** 3);
+  planets.push(moon);
+
   // let moon = new Planet(width / 2 + 400, height / 2, 30, 1000, 80, planet, 500, 0.02);
   // planets.push(moon);
   
-  rocket = new Rocket(planet.pos.x, planet.pos.y - planet.radius - 10);
+  rocket = new Rocket(earth.pos.x, earth.pos.y - earth.radius - 10);
 
   let station = new SpaceStation(width / 2 + 300, height / 2 - 200);
   stations.push(station);
