@@ -71,7 +71,7 @@ class Planet {
 
   update() {
     if (this.orbiting) {
-      this.orbitAngle += this.orbitSpeed;
+      // this.orbitAngle += this.orbitSpeed;
       this.pos.x = this.orbitCenter.pos.x + cos(this.orbitAngle) * this.orbitRadius;
       this.pos.y = this.orbitCenter.pos.y + sin(this.orbitAngle) * this.orbitRadius;
     }
@@ -233,8 +233,8 @@ class Rocket {
     }));
     
     // Set limits for the trajectory prediction
-    let maxSteps = 50000;
-    let maxDistance = planets[0].radius * 30;
+    let maxSteps = 10000;
+    let maxDistance = planets[0].radius * 100;
     
     stroke(255, 255, 0);
     noFill();
