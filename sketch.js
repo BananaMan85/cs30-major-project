@@ -163,7 +163,7 @@ class Rocket {
       return;
     }
 
-    this.findPlanet();
+    this.planet = this.findPlanet();
     this.applyGravity();
 
     for (let planet of planets) {
