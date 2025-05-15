@@ -1,4 +1,4 @@
-let G = 6.67 * 10**-11;
+const G = 6.67 * 10**-11; // Gravitational constant
 let planets = [];
 let stations = [];
 let rocket;
@@ -10,7 +10,7 @@ function setup() {
   let earth = new Planet(width / 2, height / 2, 6.37 * 10**6, 5.98 * 10**24, 6.37 * 10**6 + 70000);
   planets.push(earth);
 
-  let moon = new Planet (earth.pos.x + 3.844 * 10 ** 8, earth.pos.y + 3.844 * 10 ** 8, 1.7374 * 10 ** 6, 7.34767309 * 10 ** 22, 0, earth, 3.844 * 10 ** 8, 1.022 * 10 ** 3);
+  let moon = new Planet (earth.pos.x + 3.844 * 10 ** 8, earth.pos.y + 3.844 * 10 ** 8, 1.7374 * 10 ** 6, 7.34767309 * 10 ** 24, 0, earth, 3.844 * 10 ** 8, 1.022 * 10 ** 3);
   planets.push(moon);
 
   // let moon = new Planet(width / 2 + 400, height / 2, 30, 1000, 80, planet, 500, 0.02);
@@ -110,18 +110,41 @@ class Rocket {
     this.thrustPower = 100;
     this.fuel = Infinity;
     this.landed = false;
+    this.planet = this.findPlanet();
   }
 
-  applyGravity(planet) {
-    let force = p5.Vector.sub(planet.pos, this.pos);
+  findPlanet(){
+    let strongestGravity = {
+      force: 0,
+      index: -1,
+    };
+
+    for (let i = 0; i < planets.length; i++){
+      let planet = planets[i];
+      let force = p5.Vector.sub(planet.pos, this.pos);
+      let distance = force.mag(); 
+      
+      let strength = (G * planet.mass) / (distance * distance);
+      force.setMag(strength);
+
+      if (force.mag() > strongestGravity.force){
+        strongestGravity.force = force;
+        strongestGravity.index = i;
+      }
+    }
+
+    return planets[strongestGravity.index];
+  }
+
+  applyGravity() {
+    let force = p5.Vector.sub(this.planet.pos, this.pos);
     let distance = force.mag(); 
     
-    // Only avoid division by zero
-    if (distance < planet.radius) {
+    if (distance < this.planet.radius) {
       return; // Skip if inside planet
     }
     
-    let strength = (G * planet.mass) / (distance * distance);
+    let strength = (G * this.planet.mass) / (distance * distance);
     force.setMag(strength);
     this.acc.add(force);
   }
@@ -140,8 +163,10 @@ class Rocket {
       return;
     }
 
+    this.findPlanet();
+    this.applyGravity();
+
     for (let planet of planets) {
-      this.applyGravity(planet);
       this.applyAtmosphereDrag(planet);
     }
 
@@ -280,13 +305,11 @@ class Rocket {
       // Check if we've completed an orbit or close to it
       if (steps > 100 && p5.Vector.dist(tempPos, this.pos) < 100000) {
         vertex(this.pos.x, this.pos.y);
-        console.log(steps);
         break;
       }
       
       // Stop if going too far from the main planet or hitting the planet
       if (p5.Vector.dist(tempPos, planets[0].pos) > maxDistance || p5.Vector.dist(tempPos, planets[0].pos) < planets[0].radius) {
-        console.log(steps);
         break;
       }
     }
