@@ -10,7 +10,7 @@ function setup() {
   let earth = new Planet(width / 2, height / 2, 6.37 * 10**6, 5.98 * 10**24, 6.37 * 10**6 + 70000);
   planets.push(earth);
 
-  let moon = new Planet (earth.pos.x + 3.844 * 10 ** 8, earth.pos.y + 3.844 * 10 ** 8, 1.7374 * 10 ** 6, 7.34767309 * 10 ** 24, 0, earth, 3.844 * 10 ** 8, 1.022 * 10 ** 3);
+  let moon = new Planet (earth.pos.x + 3.844 * 10 ** 8, earth.pos.y + 3.844 * 10 ** 8, 1.7374 * 10 ** 6, 7.34767309 * 10 ** 22, 0, earth, 3.844 * 10 ** 8, 1.022 * 10 ** 3);
   planets.push(moon);
 
   // let moon = new Planet(width / 2 + 400, height / 2, 30, 1000, 80, planet, 500, 0.02);
@@ -115,7 +115,7 @@ class Rocket {
 
   findPlanet(){
     let strongestGravity = {
-      force: 0,
+      force: createVector(0, 0),
       index: -1,
     };
 
@@ -127,7 +127,7 @@ class Rocket {
       let strength = (G * planet.mass) / (distance * distance);
       force.setMag(strength);
 
-      if (force.mag() > strongestGravity.force){
+      if (force.mag() > strongestGravity.force.mag()){
         strongestGravity.force = force;
         strongestGravity.index = i;
       }
