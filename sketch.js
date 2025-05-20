@@ -110,10 +110,10 @@ class Rocket {
     this.thrustPower = 100;
     this.fuel = Infinity;
     this.landed = false;
-    this.planet = this.findPlanet();
+    this.planet = this.findPlanet(planets);
   }
 
-  findPlanet(){
+  findPlanet(planets){
     let strongestGravity = {
       force: createVector(0, 0),
       index: -1,
@@ -163,7 +163,7 @@ class Rocket {
       return;
     }
 
-    this.planet = this.findPlanet();
+    this.planet = this.findPlanet(planets);
     this.applyGravity();
 
     for (let planet of planets) {
@@ -320,21 +320,14 @@ class Rocket {
   // Helper method to calculate acceleration at a point
   calculateAcceleration(position, planetsList) {
     let acceleration = createVector(0, 0);
+    let planet = this.findPlanet(planetsList);
     
-    for (let planet of planetsList) {
-      let force = p5.Vector.sub(planet.pos, position);
-      let distance = force.mag();
-      
-      // Don't constrain distance for trajectory calculation
-      // Only avoid division by zero
-      if (distance < planet.radius) {
-        continue;
-      }
-      
-      let strength = (G * planet.mass) / (distance * distance);
-      force.setMag(strength);
-      acceleration.add(force);
-    }
+    let force = p5.Vector.sub(planet.pos, position);
+    let distance = force.mag();
+    
+    let strength = (G * planet.mass) / (distance * distance);
+    force.setMag(strength);
+    acceleration.add(force);
     
     return acceleration;
   }
