@@ -1,4 +1,15 @@
 const G = 6.67 * 10**-11; // Gravitational constant
+const EARTH = {
+  radius: 6.37 * 10**6,
+  mass: 5.98 * 10**24,
+};
+const MOON = {
+  radius: 1.7374 * 10 ** 6,
+  mass: 7.34767309 * 10 ** 22,
+  orbitRadius: 3.844 * 10 ** 8,
+  orbitSpeed: 1.022 * 10 ** 3
+};
+
 let planets = [];
 let stations = [];
 let rocket;
@@ -6,8 +17,10 @@ let zoomLevel = 1; // New zoom variable
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
+
+  rocket = new Rocket(0, 0);
   
-  let earth = new Planet(width / 2, height / 2, 6.37 * 10**6, 5.98 * 10**24, 6.37 * 10**6 + 70000);
+  let earth = new Planet(0, EARTH.radius, 6.37 * 10**6, 5.98 * 10**24, 6.37 * 10**6 + 70000);
   planets.push(earth);
 
   let moon = new Planet (earth.pos.x + 3.844 * 10 ** 8, earth.pos.y + 3.844 * 10 ** 8, 1.7374 * 10 ** 6, 7.34767309 * 10 ** 22, 0, earth, 3.844 * 10 ** 8, 1.022 * 10 ** 3);
@@ -16,10 +29,9 @@ function setup() {
   // let moon = new Planet(width / 2 + 400, height / 2, 30, 1000, 80, planet, 500, 0.02);
   // planets.push(moon);
   
-  rocket = new Rocket(earth.pos.x, earth.pos.y - earth.radius - 10);
 
-  let station = new SpaceStation(width / 2 + 300, height / 2 - 200);
-  stations.push(station);
+  // let station = new SpaceStation(width / 2 + 300, height / 2 - 200);
+  // stations.push(station);
 }
 
 function draw() {
@@ -110,10 +122,10 @@ class Rocket {
     this.thrustPower = 100;
     this.fuel = Infinity;
     this.landed = false;
-    this.planet = this.findPlanet(planets);
+    this.planet = this.findPlanet(this.pos, planets);
   }
 
-  findPlanet(planets){
+  findPlanet(pos, planets){
     let strongestGravity = {
       force: createVector(0, 0),
       index: -1,
@@ -121,7 +133,7 @@ class Rocket {
 
     for (let i = 0; i < planets.length; i++){
       let planet = planets[i];
-      let force = p5.Vector.sub(planet.pos, this.pos);
+      let force = p5.Vector.sub(planet.pos, pos);
       let distance = force.mag(); 
       
       let strength = (G * planet.mass) / (distance * distance);
@@ -163,7 +175,7 @@ class Rocket {
       return;
     }
 
-    this.planet = this.findPlanet(planets);
+    this.planet = this.findPlanet(this.pos, planets);
     this.applyGravity();
 
     for (let planet of planets) {
@@ -182,7 +194,10 @@ class Rocket {
     }
 
     this.vel.add(this.acc);
-    this.pos.add(this.vel);
+    //this.pos.add(this.vel);
+    for (let body of planets){
+      body.pos.sub(this.vel);
+    }
     this.acc.mult(0);
   }
 
@@ -320,7 +335,7 @@ class Rocket {
   // Helper method to calculate acceleration at a point
   calculateAcceleration(position, planetsList) {
     let acceleration = createVector(0, 0);
-    let planet = this.findPlanet(planetsList);
+    let planet = this.findPlanet(position, planetsList);
     
     let force = p5.Vector.sub(planet.pos, position);
     let distance = force.mag();
