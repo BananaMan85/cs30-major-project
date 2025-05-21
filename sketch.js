@@ -25,9 +25,6 @@ function setup() {
 
   let moon = new Planet (earth.pos.x + 3.844 * 10 ** 8, earth.pos.y + 3.844 * 10 ** 8, 1.7374 * 10 ** 6, 7.34767309 * 10 ** 22, 0, earth, 3.844 * 10 ** 8, 1.022 * 10 ** 3);
   planets.push(moon);
-
-  // let moon = new Planet(width / 2 + 400, height / 2, 30, 1000, 80, planet, 500, 0.02);
-  // planets.push(moon);
   
 
   // let station = new SpaceStation(width / 2 + 300, height / 2 - 200);
@@ -83,7 +80,7 @@ class Planet {
 
   update() {
     if (this.orbiting) {
-      // this.orbitAngle += this.orbitSpeed;
+      //this.orbitAngle += this.orbitSpeed;
       this.pos.x = this.orbitCenter.pos.x + cos(this.orbitAngle) * this.orbitRadius;
       this.pos.y = this.orbitCenter.pos.y + sin(this.orbitAngle) * this.orbitRadius;
     }
@@ -278,7 +275,7 @@ class Rocket {
     
     stroke(255, 255, 0);
     noFill();
-    strokeWeight(1/zoomLevel);
+    strokeWeight(1/zoomLevel); //keep the size of the line the same 
     beginShape();
     vertex(this.pos.x, this.pos.y);
     
