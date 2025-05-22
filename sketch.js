@@ -74,13 +74,13 @@ class Planet {
     this.orbitCenter = orbitCenter;
     this.orbitRadius = orbitRadius;
     this.orbitSpeed = orbitSpeed;
-    this.orbitAngle = random(TWO_PI);
+    this.orbitAngle = 0;
     this.orbiting = orbitCenter !== null;
   }
 
   update() {
     if (this.orbiting) {
-      //this.orbitAngle += this.orbitSpeed;
+      this.orbitAngle += this.orbitSpeed/this.orbitRadius; //unsure if this is accurate
       this.pos.x = this.orbitCenter.pos.x + cos(this.orbitAngle) * this.orbitRadius;
       this.pos.y = this.orbitCenter.pos.y + sin(this.orbitAngle) * this.orbitRadius;
     }
@@ -332,14 +332,36 @@ class Rocket {
   // Helper method to calculate acceleration at a point
   calculateAcceleration(position, planetsList) {
     let acceleration = createVector(0, 0);
-    let planet = this.findPlanet(position, planetsList);
     
-    let force = p5.Vector.sub(planet.pos, position);
-    let distance = force.mag();
-    
-    let strength = (G * planet.mass) / (distance * distance);
-    force.setMag(strength);
-    acceleration.add(force);
+    // Find the planet with strongest gravitational influence
+    let strongestGravity = {
+      force: createVector(0, 0),
+      planet: null
+    };
+
+    for (let i = 0; i < planetsList.length; i++) {
+      let planet = planetsList[i];
+      let force = p5.Vector.sub(planet.pos, position);
+      let distance = force.mag(); 
+      
+      // Skip if inside the planet
+      if (distance < planet.radius) {
+        continue;
+      }
+      
+      let strength = (G * planet.mass) / (distance * distance);
+      force.setMag(strength);
+
+      if (force.mag() > strongestGravity.force.mag()) {
+        strongestGravity.force = force;
+        strongestGravity.planet = planet;
+      }
+    }
+
+    // Apply the strongest gravitational force
+    if (strongestGravity.planet) {
+      acceleration.add(strongestGravity.force);
+    }
     
     return acceleration;
   }
