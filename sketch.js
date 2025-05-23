@@ -24,7 +24,7 @@ function setup() {
   planets.push(earth);
 
   let moon = new Planet (earth.pos.x + 3.844 * 10 ** 8, earth.pos.y + 3.844 * 10 ** 8, 1.7374 * 10 ** 6, 7.34767309 * 10 ** 22, 0, earth, 3.844 * 10 ** 8, 1.022 * 10 ** 3);
-  planets.push(moon);
+  planets[0].moons.push(moon);
   
 
   // let station = new SpaceStation(width / 2 + 300, height / 2 - 200);
@@ -76,6 +76,7 @@ class Planet {
     this.orbitSpeed = orbitSpeed;
     this.orbitAngle = 0;
     this.orbiting = orbitCenter !== null;
+    this.moons = [];
   }
 
   update() {
@@ -92,6 +93,11 @@ class Planet {
     noFill();
     stroke(50, 50, 255, 100);
     ellipse(this.pos.x, this.pos.y, this.atmosphereRadius * 2);
+
+    for (let moon of this.moons){
+      moon.update();
+      moon.draw();
+    }
   }
 }
 
@@ -331,6 +337,9 @@ class Rocket {
 
   // Helper method to calculate acceleration at a point
   calculateAcceleration(position, planetsList) {
+
+    //https://en.wikipedia.org/wiki/Sphere_of_influence_(astrodynamics)
+
     let acceleration = createVector(0, 0);
     
     // Find the planet with strongest gravitational influence
@@ -362,7 +371,10 @@ class Rocket {
     if (strongestGravity.planet) {
       acceleration.add(strongestGravity.force);
     }
-    
+
+    if (mouseIsPressed){
+      console.log(strongestGravity.planet);
+    }
     return acceleration;
   }
 
