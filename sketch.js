@@ -128,6 +128,10 @@ class Rocket {
     this.planet = this.findPlanet(this.pos, planets);
   }
 
+  findSOI(pos, planets){
+    
+  }
+
   findPlanet(pos, planets){
     let strongestGravity = {
       force: createVector(0, 0),
