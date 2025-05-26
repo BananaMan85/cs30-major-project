@@ -18,14 +18,14 @@ let zoomLevel = 1; // New zoom variable
 function setup() {
   createCanvas(windowWidth, windowHeight);
 
-  rocket = new Rocket(0, 0);
   
   let earth = new Planet(0, EARTH.radius, 6.37 * 10**6, 5.98 * 10**24, 6.37 * 10**6 + 70000);
   planets.push(earth);
-
+  
   let moon = new Planet (earth.pos.x + 3.844 * 10 ** 8, earth.pos.y + 3.844 * 10 ** 8, 1.7374 * 10 ** 6, 7.34767309 * 10 ** 22, 0, earth, 3.844 * 10 ** 8, 1.022 * 10 ** 3);
   planets[0].moons.push(moon);
   
+  rocket = new Rocket(0, 0);
 
   // let station = new SpaceStation(width / 2 + 300, height / 2 - 200);
   // stations.push(station);
@@ -44,14 +44,14 @@ function draw() {
     planet.update();
     planet.draw();
   }
-
+  
   for (let station of stations) {
     station.draw();
   }
-
+  
   rocket.draw();
   rocket.drawTrajectory();
-  rocket.drawOrbitAssist();
+  // rocket.drawOrbitAssist();
   rocket.update();
   rocket.checkLanding();
   rocket.takeOff();
@@ -77,6 +77,19 @@ class Planet {
     this.orbitAngle = 0;
     this.orbiting = orbitCenter !== null;
     this.moons = [];
+    this.radiusSOI = this.findSOI();
+  }
+
+  findSOI(){
+    if (this.orbiting){
+      this.radiusSOI = this.orbitRadius * ((this.mass/this.orbitCenter.mass)) ** (2/5);
+
+      push();
+      stroke(0, 0, 255);
+      noFill();
+      ellipse(this.pos.x, this.pos.y, this.radiusSOI);
+      pop();
+    }
   }
 
   update() {
@@ -85,6 +98,8 @@ class Planet {
       this.pos.x = this.orbitCenter.pos.x + cos(this.orbitAngle) * this.orbitRadius;
       this.pos.y = this.orbitCenter.pos.y + sin(this.orbitAngle) * this.orbitRadius;
     }
+
+    this.findSOI();
   }
 
   draw() {
@@ -92,7 +107,9 @@ class Planet {
     ellipse(this.pos.x, this.pos.y, this.radius * 2);
     noFill();
     stroke(50, 50, 255, 100);
+    strokeWeight(1/zoomLevel);
     ellipse(this.pos.x, this.pos.y, this.atmosphereRadius * 2);
+    ellipse(this.pos.x, this.pos.y, this.radiusSOI);
 
     for (let moon of this.moons){
       moon.update();
@@ -125,11 +142,19 @@ class Rocket {
     this.thrustPower = 100;
     this.fuel = Infinity;
     this.landed = false;
-    this.planet = this.findPlanet(this.pos, planets);
+    this.SOI = this.findSOI(this.pos, planets);
   }
 
   findSOI(pos, planets){
-    
+    let SOI = planets[0];
+
+    for (let moon of planets[0].moons){
+      if (p5.Vector.dist(pos, moon.pos) < moon.radiusSOI){
+        SOI = moon;
+      }
+    }
+
+    return SOI;
   }
 
   findPlanet(pos, planets){
@@ -182,7 +207,7 @@ class Rocket {
       return;
     }
 
-    this.planet = this.findPlanet(this.pos, planets);
+    this.planet = this.findSOI(this.pos, planets);
     this.applyGravity();
 
     for (let planet of planets) {
