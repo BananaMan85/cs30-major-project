@@ -66,7 +66,7 @@ function mouseWheel(event) {
 
 // --------- PLANET CLASS -------------
 class Planet {
-  constructor(x, y, r, m, a, orbitCenter = null, orbitRadius = 0, orbitSpeed = 0) {
+  constructor(x, y, r, m, a, orbitCenter = null, orbitRadius = 0, orbitSpeed = 0, orbitAngle = 0, moons = []) {
     this.pos = createVector(x, y);
     this.radius = r;
     this.mass = m;
@@ -74,10 +74,18 @@ class Planet {
     this.orbitCenter = orbitCenter;
     this.orbitRadius = orbitRadius;
     this.orbitSpeed = orbitSpeed;
-    this.orbitAngle = 0;
+    this.orbitAngle = orbitAngle;
     this.orbiting = orbitCenter !== null;
-    this.moons = [];
+    this.moons = moons;
     this.radiusSOI = this.findSOI();
+  }
+
+  clone(){
+    let tempMoons = [];
+    for (let moon of this.moons){
+      tempMoons.push(moon.clone());
+    }
+    return new Planet(this.pos.x, this.pos.y, this.radius, this.mass, this.atmosphereRadius, this.orbitCenter, this.orbitRadius, this.orbitSpeed, this.orbitAngle, tempMoons);
   }
 
   findSOI(){
@@ -207,6 +215,10 @@ class Rocket {
       return;
     }
 
+    if (mouseIsPressed){
+      console.log(this.planet);
+    }
+
     this.planet = this.findSOI(this.pos, planets);
     this.applyGravity();
 
@@ -249,18 +261,16 @@ class Rocket {
   }
 
   checkLanding() {
-    for (let planet of planets) {
-      let distance = p5.Vector.dist(this.pos, planet.pos);
-      if (distance < planet.radius) {
-        if (this.vel.mag() < 2) {
-          this.landed = true;
-          this.vel.set(0, 0);
-        } 
-        else {
-          console.log("Crashed!");
-          this.vel.set(0, 0);
-          this.landed = false;
-        }
+    let distance = p5.Vector.dist(this.pos, this.planet.pos);
+    if (distance < this.planet.radius) {
+      if (this.vel.mag() < 2) {
+        this.landed = true;
+        this.vel.set(0, 0);
+      } 
+      else {
+        console.log("Crashed!");
+        this.vel.set(0, 0);
+        this.landed = false;
       }
     }
   }
@@ -293,16 +303,18 @@ class Rocket {
     let tempAcc = createVector(0, 0);
     
     // Track positions of orbiting bodies
-    let futurePlanetPositions = planets.map((p, index) => ({
-      pos: p.pos.copy(),
-      mass: p.mass,
-      radius: p.radius,
-      orbiting: p.orbiting,
-      orbitCenter: p.orbitCenter ? { index: planets.indexOf(p.orbitCenter) } : null,
-      orbitRadius: p.orbitRadius,
-      orbitSpeed: p.orbitSpeed,
-      orbitAngle: p.orbitAngle
-    }));
+    // let futurePlanetPositions = planets.map((p, index) => ({
+    //   pos: p.pos.copy(),
+    //   mass: p.mass,
+    //   moons: p.moons,
+    //   radius: p.radius,
+    //   orbiting: p.orbiting,
+    //   orbitCenter: p.orbitCenter ? { index: planets.indexOf(p.orbitCenter) } : null,
+    //   orbitRadius: p.orbitRadius,
+    //   orbitSpeed: p.orbitSpeed,
+    //   orbitAngle: p.orbitAngle
+    // }));
+    let futurePlanetPositions = [planets[0].clone()];
     
     // Set limits for the trajectory prediction
     let maxSteps = 10000;
@@ -320,15 +332,16 @@ class Rocket {
     // Draw trajectory
     for (let steps = 0; steps < maxSteps; steps++) {
       // Update positions of orbiting bodies
-      for (let i = 0; i < futurePlanetPositions.length; i++) {
-        let planet = futurePlanetPositions[i];
-        if (planet.orbiting) {
-          planet.orbitAngle += planet.orbitSpeed;
-          let centerPlanet = futurePlanetPositions[planet.orbitCenter.index];
-          planet.pos.x = centerPlanet.pos.x + cos(planet.orbitAngle) * planet.orbitRadius;
-          planet.pos.y = centerPlanet.pos.y + sin(planet.orbitAngle) * planet.orbitRadius;
-        }
-      }
+      // for (let i = 0; i < futurePlanetPositions.length; i++) {
+      //   let planet = futurePlanetPositions[i];
+      //   if (planet.orbiting) {
+      //     planet.orbitAngle += planet.orbitSpeed/planet.orbitRadius;
+      //     let centerPlanet = planet.orbitCenter;
+      //     planet.pos.x = centerPlanet.pos.x + cos(planet.orbitAngle) * planet.orbitRadius;
+      //     planet.pos.y = centerPlanet.pos.y + sin(planet.orbitAngle) * planet.orbitRadius;
+      //   }
+      // }
+      futurePlanetPositions = this.nextStep(futurePlanetPositions[0]);
       
       // Velocity Verlet integration
       // Calculate current acceleration
@@ -364,46 +377,36 @@ class Rocket {
     endShape();
   }
 
+  nextStep(planet){
+    if (planet.orbiting) {
+      planet.orbitAngle += planet.orbitSpeed/planet.orbitRadius;
+      let centerPlanet = planet.orbitCenter;
+      planet.pos.x = centerPlanet.pos.x + cos(planet.orbitAngle) * planet.orbitRadius;
+      planet.pos.y = centerPlanet.pos.y + sin(planet.orbitAngle) * planet.orbitRadius;
+    }
+    console.log(planet);
+    for (let moon of planet.moons){
+      moon = this.nextStep(moon);
+    }
+
+    return planet;
+  }
+
   // Helper method to calculate acceleration at a point
   calculateAcceleration(position, planetsList) {
 
     //https://en.wikipedia.org/wiki/Sphere_of_influence_(astrodynamics)
-
     let acceleration = createVector(0, 0);
+    let planet = this.findSOI(position, planetsList);
+
+    let force = p5.Vector.sub(planet.pos, position);
+    let distance = force.mag(); 
     
-    // Find the planet with strongest gravitational influence
-    let strongestGravity = {
-      force: createVector(0, 0),
-      planet: null
-    };
+    let strength = (G * planet.mass) / (distance * distance);
+    force.setMag(strength);
 
-    for (let i = 0; i < planetsList.length; i++) {
-      let planet = planetsList[i];
-      let force = p5.Vector.sub(planet.pos, position);
-      let distance = force.mag(); 
-      
-      // Skip if inside the planet
-      if (distance < planet.radius) {
-        continue;
-      }
-      
-      let strength = (G * planet.mass) / (distance * distance);
-      force.setMag(strength);
+    acceleration.add(force);
 
-      if (force.mag() > strongestGravity.force.mag()) {
-        strongestGravity.force = force;
-        strongestGravity.planet = planet;
-      }
-    }
-
-    // Apply the strongest gravitational force
-    if (strongestGravity.planet) {
-      acceleration.add(strongestGravity.force);
-    }
-
-    if (mouseIsPressed){
-      console.log(strongestGravity.planet);
-    }
     return acceleration;
   }
 
