@@ -108,6 +108,10 @@ class Planet {
     }
 
     this.findSOI();
+
+    for (let moon of this.moons){
+      moon.update();
+    }
   }
 
   draw() {
@@ -117,10 +121,9 @@ class Planet {
     stroke(50, 50, 255, 100);
     strokeWeight(1/zoomLevel);
     ellipse(this.pos.x, this.pos.y, this.atmosphereRadius * 2);
-    ellipse(this.pos.x, this.pos.y, this.radiusSOI);
+    ellipse(this.pos.x, this.pos.y, this.radiusSOI); //Sphere of influence
 
     for (let moon of this.moons){
-      moon.update();
       moon.draw();
     }
   }
@@ -314,7 +317,9 @@ class Rocket {
     //   orbitSpeed: p.orbitSpeed,
     //   orbitAngle: p.orbitAngle
     // }));
-    let futurePlanetPositions = [planets[0].clone()];
+
+    // let futurePlanetPositions = [planets[0].clone()];
+    let futurePlanetPositions = [Object.assign(Object.create(Object.getPrototypeOf(planets[0])), planets[0])];
     
     // Set limits for the trajectory prediction
     let maxSteps = 10000;
@@ -341,7 +346,8 @@ class Rocket {
       //     planet.pos.y = centerPlanet.pos.y + sin(planet.orbitAngle) * planet.orbitRadius;
       //   }
       // }
-      futurePlanetPositions = this.nextStep(futurePlanetPositions[0]);
+      // futurePlanetPositions = this.nextStep(futurePlanetPositions[0]);
+      futurePlanetPositions[0].update();
       
       // Velocity Verlet integration
       // Calculate current acceleration
@@ -369,7 +375,7 @@ class Rocket {
       }
       
       // Stop if going too far from the main planet or hitting the planet
-      if (p5.Vector.dist(tempPos, planets[0].pos) > maxDistance || p5.Vector.dist(tempPos, planets[0].pos) < planets[0].radius) {
+      if (p5.Vector.dist(tempPos, planets[0].pos) > maxDistance || rocket.planet && p5.Vector.dist(tempPos, this.planet.pos) < this.planet.radius) {
         break;
       }
     }
@@ -380,16 +386,15 @@ class Rocket {
   nextStep(planet){
     if (planet.orbiting) {
       planet.orbitAngle += planet.orbitSpeed/planet.orbitRadius;
-      let centerPlanet = planet.orbitCenter;
-      planet.pos.x = centerPlanet.pos.x + cos(planet.orbitAngle) * planet.orbitRadius;
-      planet.pos.y = centerPlanet.pos.y + sin(planet.orbitAngle) * planet.orbitRadius;
+      planet.pos.x = planet.orbitCenter.pos.x + cos(planet.orbitAngle) * planet.orbitRadius;
+      planet.pos.y = planet.orbitCenter.pos.y + sin(planet.orbitAngle) * planet.orbitRadius;
     }
-    console.log(planet);
+    // console.log(planet);
     for (let moon of planet.moons){
       moon = this.nextStep(moon);
     }
 
-    return planet;
+    return [planet];
   }
 
   // Helper method to calculate acceleration at a point
