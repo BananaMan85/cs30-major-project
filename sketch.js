@@ -91,12 +91,6 @@ class Planet {
   findSOI(){
     if (this.orbiting){
       this.radiusSOI = this.orbitRadius * ((this.mass/this.orbitCenter.mass)) ** (2/5);
-
-      push();
-      stroke(0, 0, 255);
-      noFill();
-      ellipse(this.pos.x, this.pos.y, this.radiusSOI);
-      pop();
     }
   }
 
@@ -122,6 +116,13 @@ class Planet {
     strokeWeight(1/zoomLevel);
     ellipse(this.pos.x, this.pos.y, this.atmosphereRadius * 2);
     ellipse(this.pos.x, this.pos.y, this.radiusSOI); //Sphere of influence
+
+    
+    // push();
+    // stroke(0, 0, 255);
+    // noFill();
+    // ellipse(this.pos.x, this.pos.y, this.radiusSOI);
+    // pop();
 
     for (let moon of this.moons){
       moon.draw();
