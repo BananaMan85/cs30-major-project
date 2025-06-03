@@ -219,9 +219,9 @@ class Rocket {
       return;
     }
 
-    if (mouseIsPressed){
-      console.log(this.planet);
-    }
+    // if (mouseIsPressed){
+    //   console.log(this.planet);
+    // }
 
     this.planet = this.findSOI(this.pos, planets);
     this.applyGravity();
@@ -348,7 +348,8 @@ class Rocket {
       //   }
       // }
       // futurePlanetPositions = this.nextStep(futurePlanetPositions[0]);
-      futurePlanetPositions[0].update();
+      // futurePlanetPositions[0].update();
+      // console.log(futurePlanetPositions === planets);
       
       // Velocity Verlet integration
       // Calculate current acceleration
