@@ -80,17 +80,38 @@ class Planet {
     this.radiusSOI = this.findSOI();
   }
 
-  clone(){
+  clone(newOrbitCenter = null) {
+  // Create the cloned planet first
+    let clonedPlanet = new Planet(
+      this.pos.x, 
+      this.pos.y, 
+      this.radius, 
+      this.mass, 
+      this.atmosphereRadius, 
+      newOrbitCenter, // Use provided orbit center (null for root planet)
+      this.orbitRadius, 
+      this.orbitSpeed, 
+      this.orbitAngle, 
+      [] // Empty moons array for now
+    );
+  
+    // Recursively clone each moon and set the cloned planet as their orbit center
     let tempMoons = [];
-    for (let moon of this.moons){
-      tempMoons.push(moon.clone());
+    for (let moon of this.moons) {
+      let clonedMoon = moon.clone(clonedPlanet); // Recursive call with cloned planet as orbit center
+      tempMoons.push(clonedMoon);
     }
-    return new Planet(this.pos.x, this.pos.y, this.radius, this.mass, this.atmosphereRadius, this.orbitCenter, this.orbitRadius, this.orbitSpeed, this.orbitAngle, tempMoons);
+    
+    // Set the cloned moons
+    clonedPlanet.moons = tempMoons;
+    
+    return clonedPlanet;
   }
+
 
   findSOI(){
     if (this.orbiting){
-      this.radiusSOI = this.orbitRadius * ((this.mass/this.orbitCenter.mass)) ** (2/5);
+      this.radiusSOI = this.orbitRadius * (this.mass/this.orbitCenter.mass) ** (2/5);
     }
   }
 
@@ -301,61 +322,39 @@ class Rocket {
   }
 
   drawTrajectory() {
-    // Create temporary variables for simulation
+  // Create temporary variables for simulation
     let tempPos = this.pos.copy();
     let tempVel = this.vel.copy();
-    let tempAcc = createVector(0, 0);
     
-    // Track positions of orbiting bodies
-    // let futurePlanetPositions = planets.map((p, index) => ({
-    //   pos: p.pos.copy(),
-    //   mass: p.mass,
-    //   moons: p.moons,
-    //   radius: p.radius,
-    //   orbiting: p.orbiting,
-    //   orbitCenter: p.orbitCenter ? { index: planets.indexOf(p.orbitCenter) } : null,
-    //   orbitRadius: p.orbitRadius,
-    //   orbitSpeed: p.orbitSpeed,
-    //   orbitAngle: p.orbitAngle
-    // }));
-
-    // let futurePlanetPositions = [planets[0].clone()];
-    let futurePlanetPositions = [Object.assign(Object.create(Object.getPrototypeOf(planets[0])), planets[0])];
+    let futurePlanetPositions = [planets[0].clone()];
     
     // Set limits for the trajectory prediction
     let maxSteps = 10000;
     let maxDistance = planets[0].radius * 100;
     
-    stroke(255, 255, 0);
+    stroke(255, 255, 0, 150); 
     noFill();
-    strokeWeight(1/zoomLevel); //keep the size of the line the same 
+    strokeWeight(1/zoomLevel);
     beginShape();
     vertex(this.pos.x, this.pos.y);
     
-    // Use Velocity Verlet integration for better energy conservation
     let dt = 5.00;
     
     // Draw trajectory
     for (let steps = 0; steps < maxSteps; steps++) {
-      // Update positions of orbiting bodies
-      // for (let i = 0; i < futurePlanetPositions.length; i++) {
-      //   let planet = futurePlanetPositions[i];
-      //   if (planet.orbiting) {
-      //     planet.orbitAngle += planet.orbitSpeed/planet.orbitRadius;
-      //     let centerPlanet = planet.orbitCenter;
-      //     planet.pos.x = centerPlanet.pos.x + cos(planet.orbitAngle) * planet.orbitRadius;
-      //     planet.pos.y = centerPlanet.pos.y + sin(planet.orbitAngle) * planet.orbitRadius;
-      //   }
-      // }
-      // futurePlanetPositions = this.nextStep(futurePlanetPositions[0]);
-      // futurePlanetPositions[0].update();
-      // console.log(futurePlanetPositions === planets);
+
+      // Update the cloned planet's orbital motion
+      futurePlanetPositions[0].update();
+
+      // Move opposite rocket's velocity
+      for (let body of futurePlanetPositions) {
+        this.movePlanetSystem(body, tempVel.copy().mult(-1));
+      }
       
       // Velocity Verlet integration
-      // Calculate current acceleration
       let acc = this.calculateAcceleration(tempPos, futurePlanetPositions);
       
-      // Update position: x(t+dt) = x(t) + v(t)*dt + 0.5*a(t)*dt^2
+      // Update position
       let halfAccStep = p5.Vector.mult(acc, 0.5 * dt * dt);
       let velStep = p5.Vector.mult(tempVel, dt);
       tempPos.add(p5.Vector.add(velStep, halfAccStep));
@@ -363,27 +362,36 @@ class Rocket {
       // Calculate new acceleration
       let newAcc = this.calculateAcceleration(tempPos, futurePlanetPositions);
       
-      // Update velocity: v(t+dt) = v(t) + 0.5*[a(t) + a(t+dt)]*dt
+      // Update velocity
       let avgAcc = p5.Vector.add(acc, newAcc).mult(0.5 * dt);
       tempVel.add(avgAcc);
       
       // Add point to trajectory
       vertex(tempPos.x, tempPos.y);
       
-      // Check if we've completed an orbit or close to it
+      // Check completion conditions
       if (steps > 100 && p5.Vector.dist(tempPos, this.pos) < 100000) {
         vertex(this.pos.x, this.pos.y);
         break;
       }
       
-      // Stop if going too far from the main planet or hitting the planet
-      if (p5.Vector.dist(tempPos, planets[0].pos) > maxDistance || rocket.planet && p5.Vector.dist(tempPos, this.planet.pos) < this.planet.radius) {
+      if (p5.Vector.dist(tempPos, planets[0].pos) > maxDistance || 
+          rocket.planet && p5.Vector.dist(tempPos, this.planet.pos) < this.planet.radius) {
         break;
       }
     }
     
     endShape();
   }
+
+  // Helper method to move a planet and all its moons
+  movePlanetSystem(planet, offset) {
+    planet.pos.add(offset);
+    for (let moon of planet.moons) {
+      this.movePlanetSystem(moon, offset);
+    }
+  }
+
 
   nextStep(planet){
     if (planet.orbiting) {
