@@ -13,35 +13,58 @@ const MOON = {
 let planets = [];
 let stations = [];
 let rocket;
-let zoomLevel = 1; // New zoom variable
+let zoomLevel = 1;
+
+// Time control variables
+let baseTimeStep = 1.0; // Base time step in seconds
+let timeMultiplier = 1.0; // Speed multiplier (1x, 2x, 0.5x, etc.)
+let currentTimeStep = 1.0; // Actual time step used
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
 
-  
-  let earth = new Planet(0, EARTH.radius, 6.37 * 10**6, 5.98 * 10**24, 6.37 * 10**6 + 70000);
+  // Earth starts below the rocket (rocket is at origin)
+  let earth = new Planet(0, EARTH.radius + 200000, EARTH.radius, EARTH.mass, EARTH.radius + 70000);
   planets.push(earth);
   
-  let moon = new Planet (earth.pos.x + 3.844 * 10 ** 8, earth.pos.y + 3.844 * 10 ** 8, 1.7374 * 10 ** 6, 7.34767309 * 10 ** 22, 0, earth, 3.844 * 10 ** 8, 1.022 * 10 ** 3);
+  let moon = new Planet(
+    earth.pos.x + MOON.orbitRadius, 
+    earth.pos.y, 
+    MOON.radius, 
+    MOON.mass, 
+    0, 
+    earth, 
+    MOON.orbitRadius, 
+    MOON.orbitSpeed
+  );
   planets[0].moons.push(moon);
   
+  // Rocket stays at origin
   rocket = new Rocket(0, 0);
-
-  // let station = new SpaceStation(width / 2 + 300, height / 2 - 200);
-  // stations.push(station);
 }
 
 function draw() {
   background(0);
-  fill('red');
-  strokeWeight(2);
-  text(rocket.vel.mag(), 0, 50);
   
-  translate(width / 2 - rocket.pos.x * zoomLevel, height / 2 - rocket.pos.y * zoomLevel);
-  scale(zoomLevel); // Apply zoom
+  // Update time step
+  currentTimeStep = baseTimeStep * timeMultiplier;
   
+  // UI display
+  fill('white');
+  strokeWeight(1);
+  textSize(16);
+  text(`Speed: ${rocket.vel.mag().toFixed(1)} m/s`, 10, 30);
+  text(`Time Multiplier: ${timeMultiplier.toFixed(1)}x`, 10, 50);
+  text(`Altitude: ${(p5.Vector.dist(rocket.pos, rocket.currentSOI.pos) - rocket.currentSOI.radius).toFixed(0)} m`, 10, 70);
+  text(`Controls: 1-5 for speed, Mouse wheel for zoom, Arrows to steer/thrust`, 10, 90);
+  
+  // Camera centered on rocket (which is at 0,0)
+  translate(width / 2, height / 2);
+  scale(zoomLevel);
+  
+  // Update and draw everything
   for (let planet of planets) {
-    planet.update();
+    planet.update(currentTimeStep);
     planet.draw();
   }
   
@@ -49,24 +72,33 @@ function draw() {
     station.draw();
   }
   
+  rocket.update(currentTimeStep);
   rocket.draw();
   rocket.drawTrajectory();
-  // rocket.drawOrbitAssist();
-  rocket.update();
   rocket.checkLanding();
   rocket.takeOff();
   rocket.checkDocking();
 }
 
+// Speed control with number keys
+function keyPressed() {
+  if (key === '1') timeMultiplier = 0.1;
+  else if (key === '2') timeMultiplier = 0.5;
+  else if (key === '3') timeMultiplier = 1.0;
+  else if (key === '4') timeMultiplier = 2.0;
+  else if (key === '5') timeMultiplier = 5.0;
+  else if (key === '0') timeMultiplier = 0.0; // Pause
+}
+
 // Zoom control
 function mouseWheel(event) {
-  zoomLevel *= event.delta > 0 ? 0.5 : 2; // Zoom in/out smoothly
-  zoomLevel = constrain(zoomLevel, 0.00000001, 3); // Set zoom limits
+  zoomLevel *= event.delta > 0 ? 0.8 : 1.25;
+  zoomLevel = constrain(zoomLevel, 0.00000001, 3);
 }
 
 // --------- PLANET CLASS -------------
 class Planet {
-  constructor(x, y, r, m, a, orbitCenter = null, orbitRadius = 0, orbitSpeed = 0, orbitAngle = 0, moons = []) {
+  constructor(x, y, r, m, a, orbitCenter = null, orbitRadius = 0, orbitSpeed = 0, orbitAngle = 0) {
     this.pos = createVector(x, y);
     this.radius = r;
     this.mass = m;
@@ -76,76 +108,81 @@ class Planet {
     this.orbitSpeed = orbitSpeed;
     this.orbitAngle = orbitAngle;
     this.orbiting = orbitCenter !== null;
-    this.moons = moons;
-    this.radiusSOI = this.findSOI();
+    this.moons = [];
+    this.radiusSOI = this.calculateSOI();
   }
 
-  clone(newOrbitCenter = null) {
-  // Create the cloned planet first
-    let clonedPlanet = new Planet(
+  clone() {
+    let cloned = new Planet(
       this.pos.x, 
       this.pos.y, 
       this.radius, 
       this.mass, 
       this.atmosphereRadius, 
-      newOrbitCenter, // Use provided orbit center (null for root planet)
+      this.orbitCenter, 
       this.orbitRadius, 
       this.orbitSpeed, 
-      this.orbitAngle, 
-      [] // Empty moons array for now
+      this.orbitAngle
     );
-  
-    // Recursively clone each moon and set the cloned planet as their orbit center
-    let tempMoons = [];
+    
+    // Clone moons recursively
     for (let moon of this.moons) {
-      let clonedMoon = moon.clone(clonedPlanet); // Recursive call with cloned planet as orbit center
-      tempMoons.push(clonedMoon);
+      let clonedMoon = moon.clone();
+      clonedMoon.orbitCenter = cloned; // Update reference
+      cloned.moons.push(clonedMoon);
     }
     
-    // Set the cloned moons
-    clonedPlanet.moons = tempMoons;
-    
-    return clonedPlanet;
+    return cloned;
   }
 
-
-  findSOI(){
-    if (this.orbiting){
-      this.radiusSOI = this.orbitRadius * (this.mass/this.orbitCenter.mass) ** (2/5);
+  calculateSOI() {
+    if (this.orbiting && this.orbitCenter) {
+      return this.orbitRadius * Math.pow(this.mass / this.orbitCenter.mass, 2/5);
     }
+    return Infinity; // Primary body has infinite SOI
   }
 
-  update() {
-    if (this.orbiting) {
-      this.orbitAngle += this.orbitSpeed/this.orbitRadius; //unsure if this is accurate
+  update(dt) {
+    if (this.orbiting && this.orbitCenter) {
+      this.orbitAngle += (this.orbitSpeed / this.orbitRadius) * dt;
       this.pos.x = this.orbitCenter.pos.x + cos(this.orbitAngle) * this.orbitRadius;
       this.pos.y = this.orbitCenter.pos.y + sin(this.orbitAngle) * this.orbitRadius;
     }
 
-    this.findSOI();
+    this.radiusSOI = this.calculateSOI();
 
-    for (let moon of this.moons){
-      moon.update();
+    for (let moon of this.moons) {
+      moon.update(dt);
+    }
+  }
+
+  // Move this planet and all its moons by an offset vector
+  moveSystem(offset) {
+    this.pos.add(offset);
+    for (let moon of this.moons) {
+      moon.moveSystem(offset);
     }
   }
 
   draw() {
+    // Planet body
     fill(100, 100, 255);
+    noStroke();
     ellipse(this.pos.x, this.pos.y, this.radius * 2);
+    
+    // Atmosphere
     noFill();
     stroke(50, 50, 255, 100);
     strokeWeight(1/zoomLevel);
     ellipse(this.pos.x, this.pos.y, this.atmosphereRadius * 2);
-    ellipse(this.pos.x, this.pos.y, this.radiusSOI); //Sphere of influence
-
     
-    // push();
-    // stroke(0, 0, 255);
-    // noFill();
-    // ellipse(this.pos.x, this.pos.y, this.radiusSOI);
-    // pop();
+    // Sphere of influence (only for moons)
+    if (this.orbiting) {
+      stroke(255, 255, 0, 50);
+      ellipse(this.pos.x, this.pos.y, this.radiusSOI * 2);
+    }
 
-    for (let moon of this.moons){
+    for (let moon of this.moons) {
       moon.draw();
     }
   }
@@ -168,106 +205,114 @@ class SpaceStation {
 // --------- ROCKET CLASS -------------
 class Rocket {
   constructor(x, y) {
-    this.pos = createVector(x, y);
+    this.pos = createVector(x, y); // Always stays at 0,0
     this.vel = createVector(0, 0);
     this.acc = createVector(0, 0);
     this.angle = -PI / 2;
-    this.thrustPower = 100;
+    this.thrustPower = 200;
     this.fuel = Infinity;
     this.landed = false;
-    this.SOI = this.findSOI(this.pos, planets);
+    this.currentSOI = planets[0];
   }
 
-  findSOI(pos, planets){
-    let SOI = planets[0];
-
-    for (let moon of planets[0].moons){
-      if (p5.Vector.dist(pos, moon.pos) < moon.radiusSOI){
-        SOI = moon;
+  findSOI(pos, planetSystem) {
+    // Start with the primary body
+    let currentSOI = planetSystem[0];
+    
+    // Check all moons recursively
+    currentSOI = this.checkMoonsSOI(pos, planetSystem[0], currentSOI);
+    
+    return currentSOI;
+  }
+  
+  checkMoonsSOI(pos, planet, currentSOI) {
+    for (let moon of planet.moons) {
+      if (p5.Vector.dist(pos, moon.pos) < moon.radiusSOI) {
+        currentSOI = moon;
       }
+      // Recursively check moon's moons
+      this.checkMoonsSOI(pos, moon, currentSOI);
     }
-
-    return SOI;
+    return currentSOI;
   }
 
-  findPlanet(pos, planets){
-    let strongestGravity = {
-      force: createVector(0, 0),
-      index: -1,
-    };
-
-    for (let i = 0; i < planets.length; i++){
-      let planet = planets[i];
-      let force = p5.Vector.sub(planet.pos, pos);
-      let distance = force.mag(); 
-      
-      let strength = (G * planet.mass) / (distance * distance);
+  calculateGravitationalAcceleration(pos, planetSystem) {
+    let acceleration = createVector(0, 0);
+    let dominantBody = this.findSOI(pos, planetSystem);
+    
+    // Apply gravity from the dominant body
+    let force = p5.Vector.sub(dominantBody.pos, pos);
+    let distance = force.mag();
+    
+    if (distance > dominantBody.radius) {
+      let strength = (G * dominantBody.mass) / (distance * distance);
       force.setMag(strength);
-
-      if (force.mag() > strongestGravity.force.mag()){
-        strongestGravity.force = force;
-        strongestGravity.index = i;
-      }
-    }
-
-    return planets[strongestGravity.index];
-  }
-
-  applyGravity() {
-    let force = p5.Vector.sub(this.planet.pos, this.pos);
-    let distance = force.mag(); 
-    
-    if (distance < this.planet.radius) {
-      return; // Skip if inside planet
+      acceleration.add(force);
     }
     
-    let strength = (G * this.planet.mass) / (distance * distance);
-    force.setMag(strength);
-    this.acc.add(force);
+    return acceleration;
   }
 
-  applyAtmosphereDrag(planet) {
+  applyAtmosphereDrag(planet, dt) {
     let distance = p5.Vector.dist(this.pos, planet.pos);
     if (distance < planet.atmosphereRadius) {
-      let dragStrength = map(distance, planet.radius, planet.atmosphereRadius, 0.05, 0);
-      let drag = this.vel.copy().mult(-dragStrength);
+      let dragStrength = map(distance, planet.radius, planet.atmosphereRadius, 0.1, 0);
+      let drag = this.vel.copy().mult(-dragStrength * dt);
       this.acc.add(drag);
     }
   }
 
-  update() {
-    if (this.landed) {
+  update(dt) {
+    if (this.landed || dt === 0) {
       return;
     }
 
-    // if (mouseIsPressed){
-    //   console.log(this.planet);
-    // }
+    this.currentSOI = this.findSOI(this.pos, planets);
+    
+    // Reset acceleration
+    this.acc.mult(0);
+    
+    // Apply gravitational acceleration
+    let gravityAcc = this.calculateGravitationalAcceleration(this.pos, planets);
+    this.acc.add(gravityAcc);
 
-    this.planet = this.findSOI(this.pos, planets);
-    this.applyGravity();
-
+    // Apply atmospheric drag from all bodies
     for (let planet of planets) {
-      this.applyAtmosphereDrag(planet);
+      this.applyAtmosphereDrag(planet, dt);
+      for (let moon of planet.moons) {
+        this.applyAtmosphereDrag(moon, dt);
+      }
     }
 
+    // Handle input
     if (keyIsDown(LEFT_ARROW)) {
-      this.angle -= 0.05;
+      this.angle -= 0.05 * dt;
     }
     if (keyIsDown(RIGHT_ARROW)) {
-      this.angle += 0.05;
+      this.angle += 0.05 * dt;
     }
     if (keyIsDown(UP_ARROW) && this.fuel > 0) {
       this.applyThrust();
-      this.fuel -= 0.2;
+      this.fuel -= 0.2 * dt;
     }
 
-    this.vel.add(this.acc);
-    //this.pos.add(this.vel);
-    for (let body of planets){
-      body.pos.sub(this.vel);
+    // Calculate velocity change
+    let deltaV = p5.Vector.mult(this.acc, dt);
+    this.vel.add(deltaV);
+    
+    // Instead of moving the rocket, move all planets in the opposite direction
+    let displacement = p5.Vector.mult(this.vel, dt);
+    let oppositeDisplacement = p5.Vector.mult(displacement, -1);
+    
+    // Move all planetary systems
+    for (let planet of planets) {
+      planet.moveSystem(oppositeDisplacement);
     }
-    this.acc.mult(0);
+    
+    // Move all stations
+    for (let station of stations) {
+      station.pos.add(oppositeDisplacement);
+    }
   }
 
   applyThrust() {
@@ -278,24 +323,31 @@ class Rocket {
   draw() {
     push();
     translate(this.pos.x, this.pos.y);
-    rotate(this.angle);
-    rotate(HALF_PI);
+    rotate(this.angle + HALF_PI);
     fill(255, 0, 0);
+    noStroke();
     triangle(-10, 15, 10, 15, 0, -15);
+    
+    // Thrust visualization
+    if (keyIsDown(UP_ARROW)) {
+      fill(255, 100, 0, 150);
+      triangle(-5, 15, 5, 15, 0, 25);
+    }
     pop();
   }
 
   checkLanding() {
-    let distance = p5.Vector.dist(this.pos, this.planet.pos);
-    if (distance < this.planet.radius) {
-      if (this.vel.mag() < 2) {
+    if (!this.currentSOI) return;
+    
+    let distance = p5.Vector.dist(this.pos, this.currentSOI.pos);
+    if (distance <= this.currentSOI.radius + 100) { // Small buffer above surface
+      if (this.vel.mag() < 5) {
         this.landed = true;
         this.vel.set(0, 0);
-      } 
-      else {
-        console.log("Crashed!");
-        this.vel.set(0, 0);
-        this.landed = false;
+        console.log("Landed successfully!");
+      } else {
+        console.log("Crashed! Impact velocity:", this.vel.mag().toFixed(1), "m/s");
+        this.vel.mult(0.1); // Bounce with energy loss
       }
     }
   }
@@ -303,126 +355,100 @@ class Rocket {
   takeOff() {
     if (this.landed && keyIsDown(UP_ARROW)) {
       this.landed = false;
-      this.vel.set(0, -2);
-    }
-  }
-
-  drawOrbitAssist() {
-    let planet = planets[0];
-    let speed = this.vel.mag();
-    let altitude = p5.Vector.dist(this.pos, planet.pos) - planet.radius;
-
-    if (speed > 4 && altitude > planet.radius * 1.5) {
-      push();
-      stroke(0, 0, 255);
-      noFill();
-      ellipse(planet.pos.x, planet.pos.y, altitude * 2);
-      pop();
+      // Give initial upward velocity
+      let upward = p5.Vector.sub(this.pos, this.currentSOI.pos).normalize().mult(10);
+      this.vel.add(upward);
     }
   }
 
   drawTrajectory() {
-  // Create temporary variables for simulation
-    let tempPos = this.pos.copy();
-    let tempVel = this.vel.copy();
+    if (timeMultiplier === 0) return; // Don't draw trajectory when paused
     
-    let futurePlanetPositions = [planets[0].clone()];
+    // Create simulation state
+    let simVel = this.vel.copy();
+    let simPlanets = this.clonePlanetSystem(planets);
     
-    // Set limits for the trajectory prediction
+    // Track trajectory points relative to current world state
+    let trajectoryPoints = [];
+    trajectoryPoints.push(createVector(0, 0)); // Start at rocket position
+    
     let maxSteps = 10000;
-    let maxDistance = planets[0].radius * 100;
+    let trajectoryDt = max(baseTimeStep, currentTimeStep) * 10; // Larger time step for trajectory
     
-    stroke(255, 255, 0, 150); 
-    noFill();
-    strokeWeight(1/zoomLevel);
-    beginShape();
-    vertex(this.pos.x, this.pos.y);
-    
-    let dt = 5.00;
-    
-    // Draw trajectory
-    for (let steps = 0; steps < maxSteps; steps++) {
+    let dominantBody = this.findSOI(createVector(0, 0), simPlanets);
 
-      // Update the cloned planet's orbital motion
-      futurePlanetPositions[0].update();
-
-      // Move opposite rocket's velocity
-      for (let body of futurePlanetPositions) {
-        this.movePlanetSystem(body, tempVel.copy().mult(-1));
+    // Store initial planet positions to calculate relative movement
+    let initialEarthPos = dominantBody.pos.copy();
+    
+    for (let step = 0; step < maxSteps; step++) {
+      // Update planet positions in simulation
+      for (let planet of simPlanets) {
+        planet.update(trajectoryDt);
       }
       
-      // Velocity Verlet integration
-      let acc = this.calculateAcceleration(tempPos, futurePlanetPositions);
+      // Calculate acceleration using same method as main simulation
+      let acceleration = this.calculateGravitationalAcceleration(createVector(0, 0), simPlanets);
       
-      // Update position
-      let halfAccStep = p5.Vector.mult(acc, 0.5 * dt * dt);
-      let velStep = p5.Vector.mult(tempVel, dt);
-      tempPos.add(p5.Vector.add(velStep, halfAccStep));
+      // Calculate velocity change
+      let deltaV = p5.Vector.mult(acceleration, trajectoryDt);
+      simVel.add(deltaV);
       
-      // Calculate new acceleration
-      let newAcc = this.calculateAcceleration(tempPos, futurePlanetPositions);
+      // Calculate how much the world would move
+      let displacement = p5.Vector.mult(simVel, trajectoryDt);
+      let oppositeDisplacement = p5.Vector.mult(displacement, -1);
       
-      // Update velocity
-      let avgAcc = p5.Vector.add(acc, newAcc).mult(0.5 * dt);
-      tempVel.add(avgAcc);
-      
-      // Add point to trajectory
-      vertex(tempPos.x, tempPos.y);
-      
-      // Check completion conditions
-      if (steps > 100 && p5.Vector.dist(tempPos, this.pos) < 100000) {
-        vertex(this.pos.x, this.pos.y);
-        break;
+      // Move all planetary systems in simulation
+      for (let planet of simPlanets) {
+        planet.moveSystem(oppositeDisplacement);
       }
       
-      if (p5.Vector.dist(tempPos, planets[0].pos) > maxDistance || 
-          rocket.planet && p5.Vector.dist(tempPos, this.planet.pos) < this.planet.radius) {
-        break;
+      // Calculate trajectory point relative to Earth's movement
+      let earthMovement = p5.Vector.sub(initialEarthPos, dominantBody.pos);
+      let trajectoryPoint = earthMovement.copy();
+      trajectoryPoints.push(trajectoryPoint);
+      
+      // Stop conditions
+      let currentSOI = this.findSOI(createVector(0, 0), simPlanets);
+      if (p5.Vector.dist(createVector(0, 0), currentSOI.pos) < currentSOI.radius) {
+        console.log('here');
+        break; // Hit surface
+      }
+      
+      if (step > 100) {
+        // Check if we've completed an orbit
+        let earthDistance = p5.Vector.dist(createVector(0, 0), simPlanets[0].pos);
+        let originalEarthDistance = p5.Vector.dist(this.pos, planets[0].pos);
+        if (dist(trajectoryPoint, createVector(0, 0)) < 10000) {
+          trajectoryPoint.set(0, 0);
+          trajectoryPoints.push(trajectoryPoint);
+          break;
+        }
+      }
+      
+      if (p5.Vector.dist(createVector(0, 0), dominantBody.pos) > dominantBody.radius * 100) {
+        break; // Too far away
       }
     }
     
-    endShape();
-  }
-
-  // Helper method to move a planet and all its moons
-  movePlanetSystem(planet, offset) {
-    planet.pos.add(offset);
-    for (let moon of planet.moons) {
-      this.movePlanetSystem(moon, offset);
+    // Draw the trajectory
+    if (trajectoryPoints.length > 1) {
+      stroke(255, 255, 0, 120);
+      noFill();
+      strokeWeight(2/zoomLevel);
+      beginShape();
+      for (let point of trajectoryPoints) {
+        vertex(point.x, point.y);
+      }
+      endShape();
     }
   }
-
-
-  nextStep(planet){
-    if (planet.orbiting) {
-      planet.orbitAngle += planet.orbitSpeed/planet.orbitRadius;
-      planet.pos.x = planet.orbitCenter.pos.x + cos(planet.orbitAngle) * planet.orbitRadius;
-      planet.pos.y = planet.orbitCenter.pos.y + sin(planet.orbitAngle) * planet.orbitRadius;
+  
+  clonePlanetSystem(originalPlanets) {
+    let clonedPlanets = [];
+    for (let planet of originalPlanets) {
+      clonedPlanets.push(planet.clone());
     }
-    // console.log(planet);
-    for (let moon of planet.moons){
-      moon = this.nextStep(moon);
-    }
-
-    return [planet];
-  }
-
-  // Helper method to calculate acceleration at a point
-  calculateAcceleration(position, planetsList) {
-
-    //https://en.wikipedia.org/wiki/Sphere_of_influence_(astrodynamics)
-    let acceleration = createVector(0, 0);
-    let planet = this.findSOI(position, planetsList);
-
-    let force = p5.Vector.sub(planet.pos, position);
-    let distance = force.mag(); 
-    
-    let strength = (G * planet.mass) / (distance * distance);
-    force.setMag(strength);
-
-    acceleration.add(force);
-
-    return acceleration;
+    return clonedPlanets;
   }
 
   checkDocking() {
