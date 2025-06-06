@@ -1,7 +1,15 @@
 const G = 6.67 * 10**-11; // Gravitational constant
+
+const SUN = {
+  radius: 6.96265 * 10 ** 8,
+  mass: 1.9891 * 10 ** 30,
+};
+
 const EARTH = {
   radius: 6.37 * 10**6,
   mass: 5.98 * 10**24,
+  orbitRadius: 1.496 * 10 ** 11,
+  orbitSpeed: 2.978 * 10 ** 4,
 };
 const MOON = {
   radius: 1.7374 * 10 ** 6,
@@ -23,9 +31,19 @@ let currentTimeStep = 1.0; // Actual time step used
 function setup() {
   createCanvas(windowWidth, windowHeight);
 
+  let sun = new Planet(0, 0, SUN.radius, SUN.mass, SUN.radius);
+  planets.push(sun);
+
   // Earth starts below the rocket (rocket is at origin)
-  let earth = new Planet(0, EARTH.radius + 200000, EARTH.radius, EARTH.mass, EARTH.radius + 70000);
-  planets.push(earth);
+  let earth = new Planet(
+    sun.pos.x + EARTH.orbitRadius,
+    sun.pos.y, EARTH.radius,
+    EARTH.mass,
+    EARTH.radius + 70000,
+    sun,
+    EARTH.orbitRadius,
+    EARTH.orbitSpeed);
+  planets[0].moons.push(earth);
   
   let moon = new Planet(
     earth.pos.x + MOON.orbitRadius, 
@@ -37,7 +55,7 @@ function setup() {
     MOON.orbitRadius, 
     MOON.orbitSpeed
   );
-  planets[0].moons.push(moon);
+  planets[0].moons[0].moons.push(moon);
   
   // Rocket stays at origin
   rocket = new Rocket(0, 0);
@@ -80,6 +98,13 @@ function draw() {
   rocket.checkDocking();
 }
 
+function setupPlanets(planets){
+  let offset = dist(createVector(0, 0), earth.pos);
+  for (let planet of planets){
+
+  }
+}
+
 // Speed control with number keys
 function keyPressed() {
   if (key === '1') timeMultiplier = 0.1;
@@ -87,6 +112,9 @@ function keyPressed() {
   else if (key === '3') timeMultiplier = 1.0;
   else if (key === '4') timeMultiplier = 2.0;
   else if (key === '5') timeMultiplier = 5.0;
+  else if (key === '6') timeMultiplier = 10.0;
+  else if (key === '7') timeMultiplier = 50.0;
+  else if (key === '8') timeMultiplier = 100.0;
   else if (key === '0') timeMultiplier = 0.0; // Pause
 }
 
@@ -372,8 +400,8 @@ class Rocket {
     let trajectoryPoints = [];
     trajectoryPoints.push(createVector(0, 0)); // Start at rocket position
     
-    let maxSteps = 10000;
-    let trajectoryDt = max(baseTimeStep, currentTimeStep) * 10; // Larger time step for trajectory
+    let maxSteps = 5000;
+    let trajectoryDt = 10; // Larger time step for trajectory
     
     let dominantBody = this.findSOI(createVector(0, 0), simPlanets);
 
@@ -410,15 +438,12 @@ class Rocket {
       // Stop conditions
       let currentSOI = this.findSOI(createVector(0, 0), simPlanets);
       if (p5.Vector.dist(createVector(0, 0), currentSOI.pos) < currentSOI.radius) {
-        console.log('here');
         break; // Hit surface
       }
       
       if (step > 100) {
         // Check if we've completed an orbit
-        let earthDistance = p5.Vector.dist(createVector(0, 0), simPlanets[0].pos);
-        let originalEarthDistance = p5.Vector.dist(this.pos, planets[0].pos);
-        if (dist(trajectoryPoint, createVector(0, 0)) < 10000) {
+        if (dist(trajectoryPoint, createVector(0, 0)) < 100000) {
           trajectoryPoint.set(0, 0);
           trajectoryPoints.push(trajectoryPoint);
           break;
