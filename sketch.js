@@ -31,6 +31,7 @@ let zoomLevel = 1;
 let baseTimeStep = 1.0; // Base time step in seconds
 let timeMultiplier = 1.0; // Speed multiplier (1x, 2x, 0.5x, etc.)
 let currentTimeStep = 1.0; // Actual time step used
+let totalTime = 0;
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
@@ -74,6 +75,7 @@ function draw() {
   
   // Update time step
   currentTimeStep = baseTimeStep * timeMultiplier;
+  totalTime += currentTimeStep;
   
   // UI display
   fill('white');
