@@ -18,6 +18,10 @@ const MOON = {
   orbitSpeed: 1.022 * 10 ** 3
 };
 
+const ZOOM_MIN = 0.0000000000001;
+const ZOOM_MAX = 3;
+
+let sun, earth, moon;
 let planets = [];
 let stations = [];
 let rocket;
@@ -31,11 +35,11 @@ let currentTimeStep = 1.0; // Actual time step used
 function setup() {
   createCanvas(windowWidth, windowHeight);
 
-  let sun = new Planet(0, 0, SUN.radius, SUN.mass, SUN.radius);
-  planets.push(sun);
+  sun = new Planet(0, 0, SUN.radius, SUN.mass, SUN.radius);
+  
 
   // Earth starts below the rocket (rocket is at origin)
-  let earth = new Planet(
+  earth = new Planet(
     sun.pos.x + EARTH.orbitRadius,
     sun.pos.y, EARTH.radius,
     EARTH.mass,
@@ -43,9 +47,9 @@ function setup() {
     sun,
     EARTH.orbitRadius,
     EARTH.orbitSpeed);
-  planets[0].moons.push(earth);
+  sun.moons.push(earth);
   
-  let moon = new Planet(
+  moon = new Planet(
     earth.pos.x + MOON.orbitRadius, 
     earth.pos.y, 
     MOON.radius, 
@@ -55,10 +59,14 @@ function setup() {
     MOON.orbitRadius, 
     MOON.orbitSpeed
   );
-  planets[0].moons[0].moons.push(moon);
+  earth.moons.push(moon);
+
+  planets.push(sun);
   
   // Rocket stays at origin
   rocket = new Rocket(0, 0);
+  
+  setupPlanets(planets);
 }
 
 function draw() {
@@ -99,9 +107,10 @@ function draw() {
 }
 
 function setupPlanets(planets){
-  let offset = dist(createVector(0, 0), earth.pos);
+  let startPos = createVector(EARTH.orbitRadius, 0).add(0, -EARTH.radius + 10);
   for (let planet of planets){
-
+    planet.pos.sub(startPos);
+    setupPlanets(planet.moons);
   }
 }
 
@@ -121,7 +130,7 @@ function keyPressed() {
 // Zoom control
 function mouseWheel(event) {
   zoomLevel *= event.delta > 0 ? 0.8 : 1.25;
-  zoomLevel = constrain(zoomLevel, 0.00000001, 3);
+  zoomLevel = constrain(zoomLevel, ZOOM_MIN, ZOOM_MAX);
 }
 
 // --------- PLANET CLASS -------------
@@ -257,9 +266,10 @@ class Rocket {
     for (let moon of planet.moons) {
       if (p5.Vector.dist(pos, moon.pos) < moon.radiusSOI) {
         currentSOI = moon;
+
+        // Recursively check moon's moons
+        currentSOI = this.checkMoonsSOI(pos, moon, currentSOI);
       }
-      // Recursively check moon's moons
-      this.checkMoonsSOI(pos, moon, currentSOI);
     }
     return currentSOI;
   }
@@ -400,8 +410,8 @@ class Rocket {
     let trajectoryPoints = [];
     trajectoryPoints.push(createVector(0, 0)); // Start at rocket position
     
-    let maxSteps = 5000;
-    let trajectoryDt = 10; // Larger time step for trajectory
+    let maxSteps = 10000;
+    let trajectoryDt = 5; // Larger time step for trajectory
     
     let dominantBody = this.findSOI(createVector(0, 0), simPlanets);
 
