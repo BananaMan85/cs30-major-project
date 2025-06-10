@@ -112,7 +112,7 @@ function setupPlanets(planets){
   let startPos = createVector(EARTH.orbitRadius, 0).add(0, -EARTH.radius + 10);
   for (let planet of planets){
     planet.pos.sub(startPos);
-    setupPlanets(planet.moons);
+    // setupPlanets(planet.moons);
   }
 }
 
@@ -151,14 +151,14 @@ class Planet {
     this.radiusSOI = this.calculateSOI();
   }
 
-  clone() {
+  clone(orbitCenter = null) {
     let cloned = new Planet(
       this.pos.x, 
       this.pos.y, 
       this.radius, 
       this.mass, 
       this.atmosphereRadius, 
-      this.orbitCenter, 
+      orbitCenter, 
       this.orbitRadius, 
       this.orbitSpeed, 
       this.orbitAngle
@@ -166,7 +166,7 @@ class Planet {
     
     // Clone moons recursively
     for (let moon of this.moons) {
-      let clonedMoon = moon.clone();
+      let clonedMoon = moon.clone(this);
       clonedMoon.orbitCenter = cloned; // Update reference
       cloned.moons.push(clonedMoon);
     }
@@ -401,14 +401,14 @@ class Rocket {
     }
   }
 
-  drawTrajectory() {
-    if (timeMultiplier === 0) return; // Don't draw trajectory when paused
-    
+  simulateFuture(){
+
     // Create simulation state
     let simVel = this.vel.copy();
     let simPlanets = this.clonePlanetSystem(planets);
     
     // Track trajectory points relative to current world state
+    let simStates = [];
     let trajectoryPoints = [];
     trajectoryPoints.push(createVector(0, 0)); // Start at rocket position
     
@@ -418,7 +418,7 @@ class Rocket {
     let dominantBody = this.findSOI(createVector(0, 0), simPlanets);
 
     // Store initial planet positions to calculate relative movement
-    let initialEarthPos = dominantBody.pos.copy();
+    let initialPlanetPosition = dominantBody.pos.copy();
     
     for (let step = 0; step < maxSteps; step++) {
       // Update planet positions in simulation
@@ -441,10 +441,12 @@ class Rocket {
       for (let planet of simPlanets) {
         planet.moveSystem(oppositeDisplacement);
       }
+
+      simStates.push(simPlanets);
       
       // Calculate trajectory point relative to Earth's movement
-      let earthMovement = p5.Vector.sub(initialEarthPos, dominantBody.pos);
-      let trajectoryPoint = earthMovement.copy();
+      let planetMovement = p5.Vector.sub(initialPlanetPosition, dominantBody.pos);
+      let trajectoryPoint = planetMovement.copy();
       trajectoryPoints.push(trajectoryPoint);
       
       // Stop conditions
@@ -462,10 +464,21 @@ class Rocket {
         }
       }
       
-      if (p5.Vector.dist(createVector(0, 0), dominantBody.pos) > dominantBody.radius * 100) {
-        break; // Too far away
-      }
+      // if (p5.Vector.dist(createVector(0, 0), dominantBody.pos) > dominantBody.radius * 100) {
+      //   break; // Too far away
+      // }
     }
+
+    return {
+      points: trajectoryPoints,
+      planets: simStates,
+    };
+
+  }
+
+  drawTrajectory() {
+    
+    let trajectoryPoints = this.simulateFuture().points;
     
     // Draw the trajectory
     if (trajectoryPoints.length > 1) {
