@@ -91,6 +91,10 @@ function draw() {
   scale(zoomLevel);
   
   // Update and draw everything
+  let offset = rocket.currentSOI.findOrbitMovement(currentTimeStep) || createVector(0, 0);
+  offset.mult(-1);
+  
+  planets[0].moveSystem(offset);
   for (let planet of planets) {
     planet.update(currentTimeStep);
     planet.draw();
@@ -195,6 +199,25 @@ class Planet {
     }
   }
 
+  findOrbitMovement(dt){
+    if (this.orbiting){
+      let tempOrbitAngle = this.orbitAngle - (this.orbitSpeed / this.orbitRadius) * dt;
+      let x = this.orbitCenter.pos.x + cos(tempOrbitAngle) * this.orbitRadius;
+      let y = this.orbitCenter.pos.y + sin(tempOrbitAngle) * this.orbitRadius;
+      let oldPos = createVector(x, y);
+
+      x = this.orbitCenter.pos.x + cos(this.orbitAngle) * this.orbitRadius;
+      y = this.orbitCenter.pos.y + sin(this.orbitAngle) * this.orbitRadius;
+      let pos = createVector(x, y);
+
+      let movement = p5.Vector.sub(pos, oldPos);
+
+      movement.add(this.orbitCenter.findOrbitMovement(dt));
+
+      return movement;
+    }
+  }
+
   // Move this planet and all its moons by an offset vector
   moveSystem(offset) {
     this.pos.add(offset);
@@ -251,7 +274,7 @@ class Rocket {
     this.thrustPower = 200;
     this.fuel = Infinity;
     this.landed = false;
-    this.currentSOI = planets[0];
+    this.currentSOI = earth;
   }
 
   findSOI(pos, planetSystem) {
@@ -425,7 +448,12 @@ class Rocket {
       for (let planet of simPlanets) {
         planet.update(trajectoryDt);
       }
-      
+
+      let offset = dominantBody.findOrbitMovement(trajectoryDt) || createVector(0, 0);
+      offset.mult(-1);
+  
+      simPlanets[0].moveSystem(offset);
+
       // Calculate acceleration using same method as main simulation
       let acceleration = this.calculateGravitationalAcceleration(createVector(0, 0), simPlanets);
       
