@@ -275,10 +275,13 @@ class Rocket {
     this.fuel = Infinity;
     this.landed = false;
     this.currentSOI = earth;
+    this.lastSOIChange = millis();
+    this.soiChangeCooldown = 100;
   }
 
   correctCourse(SOI){
     let angle = SOI.findOrbitMovement().copy().heading();
+    console.log(angle);
     angle *= -1;
     this.vel.rotate(angle);
   }
@@ -290,8 +293,8 @@ class Rocket {
     // Check all moons recursively
     currentSOI = this.checkMoonsSOI(pos, planetSystem[0], currentSOI);
     
-    if (allowCourseCorrect && currentSOI.mass !== this.currentSOI.mass){
-      // this.pos.add(this.vel);
+    if (allowCourseCorrect && currentSOI.mass !== this.currentSOI.mass && millis() - this.lastSOIChange > this.soiChangeCooldown){
+      this.lastSOIChange = millis();
       // this.correctCourse(this.currentSOI);
       console.log('here');
     }
