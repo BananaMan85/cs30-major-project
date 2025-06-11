@@ -130,6 +130,7 @@ function keyPressed() {
   else if (key === '6') timeMultiplier = 10.0;
   else if (key === '7') timeMultiplier = 50.0;
   else if (key === '8') timeMultiplier = 100.0;
+  else if (key === '9') timeMultiplier = 500.0;
   else if (key === '0') timeMultiplier = 0.0; // Pause
 }
 
@@ -459,6 +460,7 @@ class Rocket {
     let initialPlanetPosition = dominantBody.pos.copy();
     
     for (let step = 0; step < maxSteps; step++) {
+      
       // Update planet positions in simulation
       for (let planet of simPlanets) {
         planet.update(trajectoryDt);
