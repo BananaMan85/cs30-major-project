@@ -91,6 +91,9 @@ function draw() {
   scale(zoomLevel);
   
   // Update and draw everything
+  let offset = p5.Vector.mult(rocket.currentSOI.findOrbitMovement(currentTimeStep), -1) || 0;
+  
+  planets[0].moveSystem(offset);
   for (let planet of planets) {
     planet.update(currentTimeStep);
     planet.draw();
@@ -100,9 +103,6 @@ function draw() {
     station.draw();
   }
   
-  let offset = p5.Vector.mult(rocket.currentSOI.findOrbitMovement(currentTimeStep), -1) || 0;
-  
-  planets[0].moveSystem(offset);
   rocket.update(currentTimeStep);
   rocket.draw();
   rocket.drawTrajectory();
