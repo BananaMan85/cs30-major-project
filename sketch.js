@@ -9,13 +9,13 @@ const EARTH = {
   radius: 6.37 * 10**6,
   mass: 5.98 * 10**24,
   orbitRadius: 1.496 * 10 ** 11,
-  orbitSpeed: 0 
+  orbitSpeed: 2.978 * 10 ** 4,
 };
 const MOON = {
   radius: 1.7374 * 10 ** 6,
   mass: 7.34767309 * 10 ** 22,
   orbitRadius: 3.844 * 10 ** 8,
-  orbitSpeed: 0
+  orbitSpeed: 1.022 * 10 ** 3
 };
 
 const ZOOM_MIN = 0.0000000000001;
@@ -277,13 +277,25 @@ class Rocket {
     this.currentSOI = earth;
   }
 
-  findSOI(pos, planetSystem) {
+  correctCourse(SOI){
+    let angle = SOI.findOrbitMovement().copy().heading();
+    angle *= -1;
+    this.vel.rotate(angle);
+  }
+
+  findSOI(pos, planetSystem, allowCourseCorrect = false) {
     // Start with the primary body
     let currentSOI = planetSystem[0];
     
     // Check all moons recursively
     currentSOI = this.checkMoonsSOI(pos, planetSystem[0], currentSOI);
     
+    if (allowCourseCorrect && currentSOI.mass !== this.currentSOI.mass){
+      // this.pos.add(this.vel);
+      // this.correctCourse(this.currentSOI);
+      console.log('here');
+    }
+
     return currentSOI;
   }
   
@@ -330,7 +342,7 @@ class Rocket {
       return;
     }
 
-    this.currentSOI = this.findSOI(this.pos, planets);
+    this.currentSOI = this.findSOI(this.pos, planets, true);
     
     // Reset acceleration
     this.acc.mult(0);
@@ -485,12 +497,16 @@ class Rocket {
       
       if (step > 100) {
         // Check if we've completed an orbit
-        if (p5.Vector.dist(trajectoryPoint, createVector(0, 0)) < 100000) {
+        if (p5.Vector.dist(trajectoryPoint, createVector(0, 0)) < 10000) {
           trajectoryPoint.set(0, 0);
           trajectoryPoints.push(trajectoryPoint);
           break;
         }
       }
+      
+      // if (p5.Vector.dist(createVector(0, 0), dominantBody.pos) > dominantBody.radius * 100) {
+      //   break; // Too far away
+      // }
     }
 
     return {
