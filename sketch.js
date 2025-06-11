@@ -91,7 +91,8 @@ function draw() {
   scale(zoomLevel);
   
   // Update and draw everything
-  let offset = p5.Vector.mult(rocket.currentSOI.findOrbitMovement(currentTimeStep), -1) || 0;
+  let offset = rocket.currentSOI.findOrbitMovement(currentTimeStep) || createVector(0, 0);
+  offset.mult(-1);
   
   planets[0].moveSystem(offset);
   for (let planet of planets) {
@@ -210,6 +211,8 @@ class Planet {
       let pos = createVector(x, y);
 
       let movement = p5.Vector.sub(pos, oldPos);
+
+      movement.add(this.orbitCenter.findOrbitMovement(dt));
 
       return movement;
     }
@@ -445,8 +448,9 @@ class Rocket {
       for (let planet of simPlanets) {
         planet.update(trajectoryDt);
       }
-      
-      let offset = p5.Vector.mult(dominantBody.findOrbitMovement(trajectoryDt), -1) || 0;
+
+      let offset = dominantBody.findOrbitMovement(trajectoryDt) || createVector(0, 0);
+      offset.mult(-1);
   
       simPlanets[0].moveSystem(offset);
 
@@ -481,7 +485,7 @@ class Rocket {
       
       if (step > 100) {
         // Check if we've completed an orbit
-        if (dist(trajectoryPoint, createVector(0, 0)) < 100000) {
+        if (p5.Vector.dist(trajectoryPoint, createVector(0, 0)) < 10000) {
           trajectoryPoint.set(0, 0);
           trajectoryPoints.push(trajectoryPoint);
           break;
