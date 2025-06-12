@@ -84,7 +84,7 @@ function draw() {
   text(`Speed: ${rocket.vel.mag().toFixed(1)} m/s`, 10, 30);
   text(`Time Multiplier: ${timeMultiplier.toFixed(1)}x`, 10, 50);
   text(`Altitude: ${(p5.Vector.dist(rocket.pos, rocket.currentSOI.pos) - rocket.currentSOI.radius).toFixed(0)} m`, 10, 70);
-  text(`Controls: 1-5 for speed, Mouse wheel for zoom, Arrows to steer/thrust`, 10, 90);
+  text(`Controls: 0-9 for speed, Mouse wheel for zoom, Arrows to steer/thrust`, 10, 90);
   
   // Camera centered on rocket (which is at 0,0)
   translate(width / 2, height / 2);
@@ -343,6 +343,14 @@ class Rocket {
 
   update(dt) {
     if (this.landed || dt === 0) {
+      let altitide = p5.Vector.dist(rocket.pos, rocket.currentSOI.pos) - rocket.currentSOI.radius;
+      if (altitide < 0){
+        let angle = this.currentSOI.pos.copy().heading();
+        let offset = createVector(altitide, 0);
+        offset.setHeading(angle);
+        planets[0].moveSystem(offset);
+
+      }
       return;
     }
 
