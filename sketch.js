@@ -153,6 +153,7 @@ function draw() {
       runGame();
       break;
     case 'PAUSED':
+      timeMultiplier = 0;
       runGame();
       drawPauseMenu();
       break;
@@ -165,459 +166,6 @@ function draw() {
   }
 
   pop();
-}
-
-function drawMainMenu() {
-  
-  // Title
-  drawTitle();
-  
-  // Menu options
-  drawMenuOptions();
-  
-  // Footer info
-  drawMenuFooter();
-  
-  // Handle menu transitions
-  if (menuTransition > 0) {
-    menuTransition -= 0.05;
-    fill(0, 0, 0, menuTransition * 255);
-    rect(0, 0, width, height);
-  }
-}
-
-function drawTitle() {
-  push();
-  
-  // Main title
-  fill(MENU_COLORS.accent[0], MENU_COLORS.accent[1], MENU_COLORS.accent[2]);
-  textAlign(CENTER, CENTER);
-  textSize(width * 0.08);
-  textStyle(BOLD);
-  text("ORBITAL NAVIGATOR", width / 2, height * 0.25);
-  
-  // Subtitle
-  fill(MENU_COLORS.text[0], MENU_COLORS.text[1], MENU_COLORS.text[2], 180);
-  textSize(width * 0.02);
-  textStyle(NORMAL);
-  text("Space Exploration Simulator", width / 2, height * 0.32);
-  
-  // Animated elements around title
-  let pulseSize = sin(frameCount * 0.05) * 10 + 20;
-  noFill();
-  stroke(MENU_COLORS.primary[0], MENU_COLORS.primary[1], MENU_COLORS.primary[2], 100);
-  strokeWeight(2);
-  ellipse(width / 2, height * 0.32, pulseSize * 20, pulseSize * 5);
-  
-  pop();
-}
-
-function drawMenuOptions() {
-  push();
-  
-  let startY = height * 0.5;
-  let spacing = height * 0.08;
-  
-  textAlign(CENTER, CENTER);
-  
-  for (let i = 0; i < menuOptions.length; i++) {
-    let y = startY + i * spacing;
-    let isSelected = (i === menuSelection);
-    
-    // Selection indicator
-    if (isSelected) {
-      // Glow effect
-      fill(MENU_COLORS.selected[0], MENU_COLORS.selected[1], MENU_COLORS.selected[2], 50);
-      noStroke();
-      ellipse(width / 2, y, 300, 50);
-      
-      // Arrow indicators
-      fill(MENU_COLORS.accent[0], MENU_COLORS.accent[1], MENU_COLORS.accent[2]);
-      textSize(width * 0.02);
-      text("►", width / 2 - textSize(menuOptions[menuSelection])*menuOptions[menuSelection].length/2.5, y);
-      text("◄", width / 2 + textSize(menuOptions[menuSelection])*menuOptions[menuSelection].length/2.5, y);
-    }
-    
-    // Menu text
-    if (isSelected) {
-      fill(MENU_COLORS.selected[0], MENU_COLORS.selected[1], MENU_COLORS.selected[2]);
-      textSize(width * 0.03);
-    } else {
-      fill(MENU_COLORS.text[0], MENU_COLORS.text[1], MENU_COLORS.text[2]);
-      textSize(width * 0.025);
-    }
-    
-    text(menuOptions[i], width / 2, y);
-  }
-  
-  pop();
-}
-
-function drawMenuFooter() {
-  push();
-  
-  fill(MENU_COLORS.text[0], MENU_COLORS.text[1], MENU_COLORS.text[2], 120);
-  textAlign(CENTER, CENTER);
-  textSize(width * 0.015);
-  
-  text("Use ↑↓ to navigate • ENTER to select • ESC to exit", width / 2, height * 0.9);
-  
-  pop();
-}
-
-function drawPauseMenu() {
-  // Semi-transparent overlay
-  fill(0, 0, 0, 150);
-  rect(0, 0, width, height);
-  
-  // Pause menu box
-  fill(20, 20, 40);
-  stroke(MENU_COLORS.primary[0], MENU_COLORS.primary[1], MENU_COLORS.primary[2]);
-  strokeWeight(2);
-  rectMode(CENTER);
-  rect(width / 2, height / 2, 300, 200);
-  
-  // Pause text
-  fill(MENU_COLORS.text[0], MENU_COLORS.text[1], MENU_COLORS.text[2]);
-  textAlign(CENTER, CENTER);
-  textSize(32);
-  text("PAUSED", width / 2, height / 2 - 40);
-  
-  textSize(16);
-  text("Press ESC to resume", width / 2, height / 2);
-  text("Press M to return to menu", width / 2, height / 2 + 30);
-}
-
-function drawSettingsMenu() {
-  
-  // Header
-  fill(MENU_COLORS.text[0], MENU_COLORS.text[1], MENU_COLORS.text[2]);
-  textAlign(CENTER, CENTER);
-  textSize(48);
-  text("SETTINGS", width / 2, height / 2 - 100);
-  
-  // Settings (Can't be changed by user)
-  textSize(24);
-  text(`Trajectory Steps: ${maxSteps}`, width / 2, height / 2 - 20);
-  text("Starting Planet: Earth", width / 2, height / 2 + 20);
-  text("Controls: Arrow Keys", width / 2, height / 2 + 60);
-  text("Thrust: 200", width / 2, height / 2 + 100);
-  text(`Fuel: ${startingFuel}`, width / 2, height / 2 + 140);
-  
-  // Footer
-  textSize(16);
-  text("Press ESC to return to menu", width / 2, height / 2 + 200);
-}
-
-function drawTutorial() {
-  
-  // Header
-  fill(MENU_COLORS.text[0], MENU_COLORS.text[1], MENU_COLORS.text[2]);
-  textAlign(CENTER, CENTER);
-  textSize(48);
-  text("TUTORIAL", width / 2, height / 2 - 150);
-  
-  // Help info
-  textSize(20);
-  text("• Use arrow keys to steer and thrust", width / 2, height / 2 - 80);
-  text("• Mouse wheel to zoom in/out", width / 2, height / 2 - 50);
-  text("• Number keys 0-9 control time speed", width / 2, height / 2 - 20);
-  text("• Watch your speed and altitude", width / 2, height / 2 + 10);
-  text("• Yellow line shows your trajectory", width / 2, height / 2 + 40);
-  text("• Press ESC to pause", width / 2, height / 2 + 70);
-  
-  // Footer
-  textSize(16);
-  text("Press ESC to return to menu", width / 2, height / 2 + 150);
-}
-
-function initializeSystem(){
-
-  planets = []; // reset planets
-
-  // Initialize every planet
-  sun = new Planet(0,
-    0,
-    SUN.radius,
-    SUN.mass,
-    SUN.radius,
-    null,
-    0,
-    0,
-    0,
-    SUN.image
-  );
-  
-  earth = new Planet(
-    sun.pos.x + EARTH.orbitRadius,
-    sun.pos.y, EARTH.radius,
-    EARTH.mass,
-    EARTH.radius + 70000,
-    sun,
-    EARTH.orbitRadius,
-    EARTH.orbitSpeed,
-    0,
-    EARTH.image
-  );
-  sun.moons.push(earth);
-  
-  moon = new Planet(
-    earth.pos.x + MOON.orbitRadius, 
-    earth.pos.y, 
-    MOON.radius, 
-    MOON.mass, 
-    0, 
-    earth, 
-    MOON.orbitRadius, 
-    MOON.orbitSpeed,
-    0,
-    MOON.image
-  );
-  earth.moons.push(moon);
-
-  mercury = new Planet(
-    sun.pos.x + MERCURY.orbitRadius,
-    sun.pos.y, MERCURY.radius,
-    MERCURY.mass,
-    0,
-    sun,
-    MERCURY.orbitRadius,
-    MERCURY.orbitSpeed,
-    MERCURY.orbitAngle,
-    MERCURY.image
-  );
-  sun.moons.push(mercury);
-
-  venus = new Planet(
-    sun.pos.x + VENUS.orbitRadius,
-    sun.pos.y, VENUS.radius,
-    VENUS.mass,
-    0,
-    sun,
-    VENUS.orbitRadius,
-    VENUS.orbitSpeed,
-    VENUS.orbitAngle,
-    VENUS.image
-  );
-  sun.moons.push(venus);
-  
-  mars = new Planet(
-    sun.pos.x + MARS.orbitRadius,
-    sun.pos.y, MARS.radius,
-    MARS.mass,
-    0,
-    sun,
-    MARS.orbitRadius,
-    MARS.orbitSpeed,
-    MARS.orbitAngle,
-    MARS.image
-  );
-  sun.moons.push(mars);
-
-  jupiter = new Planet(
-    sun.pos.x + JUPITER.orbitRadius,
-    sun.pos.y, JUPITER.radius,
-    JUPITER.mass,
-    0,
-    sun,
-    JUPITER.orbitRadius,
-    JUPITER.orbitSpeed,
-    JUPITER.orbitAngle,
-    JUPITER.image
-  );
-  sun.moons.push(jupiter);
-
-  saturn = new Planet(
-    sun.pos.x + SATURN.orbitRadius,
-    sun.pos.y, SATURN.radius,
-    SATURN.mass,
-    0,
-    sun,
-    SATURN.orbitRadius,
-    SATURN.orbitSpeed,
-    SATURN.orbitAngle,
-    SATURN.image
-  );
-  sun.moons.push(saturn);
-
-  uranus = new Planet(
-    sun.pos.x + URANUS.orbitRadius,
-    sun.pos.y, URANUS.radius,
-    URANUS.mass,
-    0,
-    sun,
-    URANUS.orbitRadius,
-    URANUS.orbitSpeed,
-    URANUS.orbitAngle,
-    URANUS.image
-  );
-  sun.moons.push(uranus);
-
-  neptune = new Planet(
-    sun.pos.x + NEPTUNE.orbitRadius,
-    sun.pos.y, NEPTUNE.radius,
-    NEPTUNE.mass,
-    0,
-    sun,
-    NEPTUNE.orbitRadius,
-    NEPTUNE.orbitSpeed,
-    NEPTUNE.orbitAngle,
-    NEPTUNE.image
-  );
-  sun.moons.push(neptune);
-
-  planets.push(sun);
-  
-  // Rocket stays at origin
-  rocket = new Rocket(0, 0);
-  
-  setupPlanets(planets, startingPlanet); // Move planets to correct starting position
-}
-
-function runGame(){
-
-  // Update time step
-  restrainTimeStep();
-  currentTimeStep = baseTimeStep * timeMultiplier;
-  
-  // Camera centered on rocket (0,0)
-  push();
-  translate(width / 2, height / 2);
-  scale(zoomLevel);
-  
-  // How much did the current SOI planet move
-  let offset = rocket.currentSOI.findOrbitMovement(currentTimeStep) || createVector(0, 0);
-  offset.mult(-1);
-  
-  // Update and draw everything
-  planets[0].moveSystem(offset);
-  for (let planet of planets) {
-    planet.update(currentTimeStep);
-    planet.draw();
-  }
-  
-  rocket.update(currentTimeStep);
-  rocket.draw();
-  rocket.drawTrajectory();
-  rocket.checkLanding();
-  rocket.takeOff();
-
-  pop();
-
-  drawUI();
-}
-
-function drawUI(){
-  // UI display
-  fill('white');
-  strokeWeight(1);
-  textSize(16);
-  text(`Speed: ${rocket.vel.mag().toFixed(1)} m/s`, 10, 30);
-  text(`Time Multiplier: ${timeMultiplier.toFixed(1)}x`, 10, 50);
-  text(`Altitude: ${(p5.Vector.dist(rocket.pos, rocket.currentSOI.pos) - rocket.currentSOI.radius).toFixed(0)} m`, 10, 70);
-  text(`Controls: 0-9 for speed, Mouse wheel for zoom, Arrows to steer/thrust`, 10, 90);
-  text(`Press ESC to pause`, 10, 110);
-  rocket.draw(100, 170, true); // Rotation indicator
-}
-
-function setupPlanets(planets, startPlanet){
-
-  // Move every planet so that starting location is at (0, 0), where the rocket is
-  let startPos = createVector(startPlanet.orbitRadius, 0).add(0, -startPlanet.radius + 10);
-  for (let planet of planets){
-    planet.pos.sub(startPos);
-  }
-}
-
-function restrainTimeStep(){
-  
-  // Don't let the time multiplier be high when near a planet because high speed impacts break things
-  let altitide = p5.Vector.dist(rocket.pos, rocket.currentSOI.pos) - rocket.currentSOI.radius;
-  if (altitide < rocket.currentSOI.radius * (1/10)){
-    timeMultiplier = min(timeMultiplier, 1);
-  }
-}
-
-function selectMenuOption() {
-  menuTransition = 1.0; // Menu fade
-
-  buttonSound.play();
-  
-  switch(menuSelection) {
-    case 0:
-      gameState = 'GAME';
-      initializeSystem(); // Initialize the game when starting
-      break;
-    case 1:
-      gameState = 'SETTINGS';
-      break;
-    case 2:
-      gameState = 'TUTORIAL';
-      break;
-  }
-}
-
-function keyPressed() {
-
-  // Which handler should be used for the current game state
-  if (gameState === 'MENU') {
-    handleMenuInput();
-  } else if (gameState === 'GAME') {
-    handleGameInput();
-  } else if (gameState === 'PAUSED') {
-    handlePauseInput();
-  } else if (gameState === 'SETTINGS' || gameState === 'TUTORIAL') {
-    if (keyCode === ESCAPE) {
-      gameState = 'MENU';
-    }
-  }
-}
-
-function handleMenuInput() {
-  if (keyCode === UP_ARROW) {
-    menuSelection = (menuSelection - 1 + menuOptions.length) % menuOptions.length;
-  } else if (keyCode === DOWN_ARROW) {
-    menuSelection = (menuSelection + 1) % menuOptions.length;
-  } else if (keyCode === ENTER) {
-    selectMenuOption();
-  } else if (keyCode === ESCAPE) {
-    // Nothing
-  }
-}
-
-function handlePauseInput() {
-  if (keyCode === ESCAPE) {
-    gameState = 'GAME';
-  } else if (key === 'm' || key === 'M') {
-    gameState = 'MENU';
-  }
-}
-
-function handleGameInput() {
-  if (keyCode === ESCAPE) {
-    gameState = 'PAUSED';
-  } else {
-    // Time multiplier handling
-    if (key === '1') timeMultiplier = 0.1;
-    else if (key === '2') timeMultiplier = 0.5;
-    else if (key === '3') timeMultiplier = 1.0;
-    else if (key === '4') timeMultiplier = 2.0;
-    else if (key === '5') timeMultiplier = 5.0;
-    else if (key === '6') timeMultiplier = 10.0;
-    else if (key === '7') timeMultiplier = 50.0;
-    else if (key === '8') timeMultiplier = 100.0;
-    else if (key === '9') timeMultiplier = 500.0;
-    else if (key === '0') timeMultiplier = 0.0;
-    
-    restrainTimeStep();
-  }
-}
-
-function mouseWheel(event) {
-
-  // Zoom control
-  zoomLevel *= event.delta > 0 ? 0.8 : 1.25;
-  zoomLevel = constrain(zoomLevel, ZOOM_MIN, ZOOM_MAX);
 }
 
 // --------- PLANET CLASS -------------
@@ -1018,3 +566,459 @@ class Rocket {
   }
 
 }
+
+function drawMainMenu() {
+  
+  // Title
+  drawTitle();
+  
+  // Menu options
+  drawMenuOptions();
+  
+  // Footer info
+  drawMenuFooter();
+  
+  // Handle menu transitions
+  if (menuTransition > 0) {
+    menuTransition -= 0.05;
+    fill(0, 0, 0, menuTransition * 255);
+    rect(0, 0, width, height);
+  }
+}
+
+function drawTitle() {
+  push();
+  
+  // Main title
+  fill(MENU_COLORS.accent[0], MENU_COLORS.accent[1], MENU_COLORS.accent[2]);
+  textAlign(CENTER, CENTER);
+  textSize(width * 0.08);
+  textStyle(BOLD);
+  text("ORBITAL NAVIGATOR", width / 2, height * 0.25);
+  
+  // Subtitle
+  fill(MENU_COLORS.text[0], MENU_COLORS.text[1], MENU_COLORS.text[2], 180);
+  textSize(width * 0.02);
+  textStyle(NORMAL);
+  text("Space Exploration Simulator", width / 2, height * 0.32);
+  
+  // Animated elements around title
+  let pulseSize = sin(frameCount * 0.05) * 10 + 20;
+  noFill();
+  stroke(MENU_COLORS.primary[0], MENU_COLORS.primary[1], MENU_COLORS.primary[2], 100);
+  strokeWeight(2);
+  ellipse(width / 2, height * 0.32, pulseSize * 20, pulseSize * 5);
+  
+  pop();
+}
+
+function drawMenuOptions() {
+  push();
+  
+  let startY = height * 0.5;
+  let spacing = height * 0.08;
+  
+  textAlign(CENTER, CENTER);
+  
+  for (let i = 0; i < menuOptions.length; i++) {
+    let y = startY + i * spacing;
+    let isSelected = (i === menuSelection);
+    
+    // Selection indicator
+    if (isSelected) {
+      // Glow effect
+      fill(MENU_COLORS.selected[0], MENU_COLORS.selected[1], MENU_COLORS.selected[2], 50);
+      noStroke();
+      ellipse(width / 2, y, 300, 50);
+      
+      // Arrow indicators
+      fill(MENU_COLORS.accent[0], MENU_COLORS.accent[1], MENU_COLORS.accent[2]);
+      textSize(width * 0.02);
+      text("►", width / 2 - textSize(menuOptions[menuSelection])*menuOptions[menuSelection].length/2.5, y);
+      text("◄", width / 2 + textSize(menuOptions[menuSelection])*menuOptions[menuSelection].length/2.5, y);
+    }
+    
+    // Menu text
+    if (isSelected) {
+      fill(MENU_COLORS.selected[0], MENU_COLORS.selected[1], MENU_COLORS.selected[2]);
+      textSize(width * 0.03);
+    } else {
+      fill(MENU_COLORS.text[0], MENU_COLORS.text[1], MENU_COLORS.text[2]);
+      textSize(width * 0.025);
+    }
+    
+    text(menuOptions[i], width / 2, y);
+  }
+  
+  pop();
+}
+
+function drawMenuFooter() {
+  push();
+  
+  fill(MENU_COLORS.text[0], MENU_COLORS.text[1], MENU_COLORS.text[2], 120);
+  textAlign(CENTER, CENTER);
+  textSize(width * 0.015);
+  
+  text("Use ↑↓ to navigate • ENTER to select • ESC to exit", width / 2, height * 0.9);
+  
+  pop();
+}
+
+function drawPauseMenu() {
+  // Semi-transparent overlay
+  fill(0, 0, 0, 150);
+  rect(0, 0, width, height);
+  
+  // Pause menu box
+  fill(20, 20, 40);
+  stroke(MENU_COLORS.primary[0], MENU_COLORS.primary[1], MENU_COLORS.primary[2]);
+  strokeWeight(2);
+  rectMode(CENTER);
+  rect(width / 2, height / 2, 300, 200);
+  
+  // Pause text
+  fill(MENU_COLORS.text[0], MENU_COLORS.text[1], MENU_COLORS.text[2]);
+  textAlign(CENTER, CENTER);
+  textSize(32);
+  text("PAUSED", width / 2, height / 2 - 40);
+  
+  textSize(16);
+  text("Press ESC to resume", width / 2, height / 2);
+  text("Press M to return to menu", width / 2, height / 2 + 30);
+}
+
+function drawSettingsMenu() {
+  
+  // Header
+  fill(MENU_COLORS.text[0], MENU_COLORS.text[1], MENU_COLORS.text[2]);
+  textAlign(CENTER, CENTER);
+  textSize(48);
+  text("SETTINGS", width / 2, height / 2 - 100);
+  
+  // Settings (Can't be changed by user)
+  textSize(24);
+  text(`Trajectory Steps: ${maxSteps}`, width / 2, height / 2 - 20);
+  text("Starting Planet: Earth", width / 2, height / 2 + 20);
+  text("Controls: Arrow Keys", width / 2, height / 2 + 60);
+  text("Thrust: 200", width / 2, height / 2 + 100);
+  text(`Fuel: ${startingFuel}`, width / 2, height / 2 + 140);
+  
+  // Footer
+  textSize(16);
+  text("Press ESC to return to menu", width / 2, height / 2 + 200);
+}
+
+function drawTutorial() {
+  
+  // Header
+  fill(MENU_COLORS.text[0], MENU_COLORS.text[1], MENU_COLORS.text[2]);
+  textAlign(CENTER, CENTER);
+  textSize(48);
+  text("TUTORIAL", width / 2, height / 2 - 150);
+  
+  // Help info
+  textSize(20);
+  text("• Use arrow keys to steer and thrust", width / 2, height / 2 - 80);
+  text("• Mouse wheel to zoom in/out", width / 2, height / 2 - 50);
+  text("• Number keys 0-9 control time speed", width / 2, height / 2 - 20);
+  text("• Watch your speed and altitude", width / 2, height / 2 + 10);
+  text("• Yellow line shows your trajectory", width / 2, height / 2 + 40);
+  text("• Press ESC to pause", width / 2, height / 2 + 70);
+  
+  // Footer
+  textSize(16);
+  text("Press ESC to return to menu", width / 2, height / 2 + 150);
+}
+
+function initializeSystem(){
+
+  planets = []; // reset planets
+
+  // Initialize every planet
+  sun = new Planet(0,
+    0,
+    SUN.radius,
+    SUN.mass,
+    SUN.radius,
+    null,
+    0,
+    0,
+    0,
+    SUN.image
+  );
+  
+  earth = new Planet(
+    sun.pos.x + EARTH.orbitRadius,
+    sun.pos.y, EARTH.radius,
+    EARTH.mass,
+    EARTH.radius + 70000,
+    sun,
+    EARTH.orbitRadius,
+    EARTH.orbitSpeed,
+    0,
+    EARTH.image
+  );
+  sun.moons.push(earth);
+  
+  moon = new Planet(
+    earth.pos.x + MOON.orbitRadius, 
+    earth.pos.y, 
+    MOON.radius, 
+    MOON.mass, 
+    0, 
+    earth, 
+    MOON.orbitRadius, 
+    MOON.orbitSpeed,
+    0,
+    MOON.image
+  );
+  earth.moons.push(moon);
+
+  mercury = new Planet(
+    sun.pos.x + MERCURY.orbitRadius,
+    sun.pos.y, MERCURY.radius,
+    MERCURY.mass,
+    0,
+    sun,
+    MERCURY.orbitRadius,
+    MERCURY.orbitSpeed,
+    MERCURY.orbitAngle,
+    MERCURY.image
+  );
+  sun.moons.push(mercury);
+
+  venus = new Planet(
+    sun.pos.x + VENUS.orbitRadius,
+    sun.pos.y, VENUS.radius,
+    VENUS.mass,
+    0,
+    sun,
+    VENUS.orbitRadius,
+    VENUS.orbitSpeed,
+    VENUS.orbitAngle,
+    VENUS.image
+  );
+  sun.moons.push(venus);
+  
+  mars = new Planet(
+    sun.pos.x + MARS.orbitRadius,
+    sun.pos.y, MARS.radius,
+    MARS.mass,
+    0,
+    sun,
+    MARS.orbitRadius,
+    MARS.orbitSpeed,
+    MARS.orbitAngle,
+    MARS.image
+  );
+  sun.moons.push(mars);
+
+  jupiter = new Planet(
+    sun.pos.x + JUPITER.orbitRadius,
+    sun.pos.y, JUPITER.radius,
+    JUPITER.mass,
+    0,
+    sun,
+    JUPITER.orbitRadius,
+    JUPITER.orbitSpeed,
+    JUPITER.orbitAngle,
+    JUPITER.image
+  );
+  sun.moons.push(jupiter);
+
+  saturn = new Planet(
+    sun.pos.x + SATURN.orbitRadius,
+    sun.pos.y, SATURN.radius,
+    SATURN.mass,
+    0,
+    sun,
+    SATURN.orbitRadius,
+    SATURN.orbitSpeed,
+    SATURN.orbitAngle,
+    SATURN.image
+  );
+  sun.moons.push(saturn);
+
+  uranus = new Planet(
+    sun.pos.x + URANUS.orbitRadius,
+    sun.pos.y, URANUS.radius,
+    URANUS.mass,
+    0,
+    sun,
+    URANUS.orbitRadius,
+    URANUS.orbitSpeed,
+    URANUS.orbitAngle,
+    URANUS.image
+  );
+  sun.moons.push(uranus);
+
+  neptune = new Planet(
+    sun.pos.x + NEPTUNE.orbitRadius,
+    sun.pos.y, NEPTUNE.radius,
+    NEPTUNE.mass,
+    0,
+    sun,
+    NEPTUNE.orbitRadius,
+    NEPTUNE.orbitSpeed,
+    NEPTUNE.orbitAngle,
+    NEPTUNE.image
+  );
+  sun.moons.push(neptune);
+
+  planets.push(sun);
+  
+  // Rocket stays at origin
+  rocket = new Rocket(0, 0);
+  
+  setupPlanets(planets, startingPlanet); // Move planets to correct starting position
+}
+
+function runGame(){
+
+  // Update time step
+  restrainTimeStep();
+  currentTimeStep = baseTimeStep * timeMultiplier;
+  
+  // Camera centered on rocket (0,0)
+  push();
+  translate(width / 2, height / 2);
+  scale(zoomLevel);
+  
+  // How much did the current SOI planet move
+  let offset = rocket.currentSOI.findOrbitMovement(currentTimeStep) || createVector(0, 0);
+  offset.mult(-1);
+  
+  // Update and draw everything
+  planets[0].moveSystem(offset);
+  for (let planet of planets) {
+    planet.update(currentTimeStep);
+    planet.draw();
+  }
+  
+  rocket.update(currentTimeStep);
+  rocket.draw();
+  rocket.drawTrajectory();
+  rocket.checkLanding();
+  rocket.takeOff();
+
+  pop();
+
+  drawUI();
+}
+
+function drawUI(){
+  // UI display
+  fill('white');
+  strokeWeight(1);
+  textSize(16);
+  text(`Speed: ${rocket.vel.mag().toFixed(1)} m/s`, 10, 30);
+  text(`Time Multiplier: ${timeMultiplier.toFixed(1)}x`, 10, 50);
+  text(`Altitude: ${(p5.Vector.dist(rocket.pos, rocket.currentSOI.pos) - rocket.currentSOI.radius).toFixed(0)} m`, 10, 70);
+  text(`Controls: 0-9 for speed, Mouse wheel for zoom, Arrows to steer/thrust`, 10, 90);
+  text(`Press ESC to pause`, 10, 110);
+  rocket.draw(100, 170, true); // Rotation indicator
+}
+
+function setupPlanets(planets, startPlanet){
+
+  // Move every planet so that starting location is at (0, 0), where the rocket is
+  let startPos = createVector(startPlanet.orbitRadius, 0).add(0, -startPlanet.radius + 10);
+  for (let planet of planets){
+    planet.pos.sub(startPos);
+  }
+}
+
+function restrainTimeStep(){
+  
+  // Don't let the time multiplier be high when near a planet because high speed impacts break things
+  let altitide = p5.Vector.dist(rocket.pos, rocket.currentSOI.pos) - rocket.currentSOI.radius;
+  if (altitide < rocket.currentSOI.radius * (1/10)){
+    timeMultiplier = min(timeMultiplier, 1);
+  }
+}
+
+function selectMenuOption() {
+  menuTransition = 1.0; // Menu fade
+
+  buttonSound.play();
+  
+  switch(menuSelection) {
+    case 0:
+      gameState = 'GAME';
+      timeMultiplier = 1;
+      initializeSystem(); // Initialize the game when starting
+      break;
+    case 1:
+      gameState = 'SETTINGS';
+      break;
+    case 2:
+      gameState = 'TUTORIAL';
+      break;
+  }
+}
+
+function keyPressed() {
+
+  // Which handler should be used for the current game state
+  if (gameState === 'MENU') {
+    handleMenuInput();
+  } else if (gameState === 'GAME') {
+    handleGameInput();
+  } else if (gameState === 'PAUSED') {
+    handlePauseInput();
+  } else if (gameState === 'SETTINGS' || gameState === 'TUTORIAL') {
+    if (keyCode === ESCAPE) {
+      gameState = 'MENU';
+    }
+  }
+}
+
+function handleMenuInput() {
+  if (keyCode === UP_ARROW) {
+    menuSelection = (menuSelection - 1 + menuOptions.length) % menuOptions.length;
+  } else if (keyCode === DOWN_ARROW) {
+    menuSelection = (menuSelection + 1) % menuOptions.length;
+  } else if (keyCode === ENTER) {
+    selectMenuOption();
+  } else if (keyCode === ESCAPE) {
+    // Nothing
+  }
+}
+
+function handlePauseInput() {
+  if (keyCode === ESCAPE) {
+    timeMultiplier = 1;
+    gameState = 'GAME';
+  } else if (key === 'm' || key === 'M') {
+    gameState = 'MENU';
+  }
+}
+
+function handleGameInput() {
+  if (keyCode === ESCAPE) {
+    gameState = 'PAUSED';
+  } else {
+    // Time multiplier handling
+    if (key === '1') timeMultiplier = 0.1;
+    else if (key === '2') timeMultiplier = 0.5;
+    else if (key === '3') timeMultiplier = 1.0;
+    else if (key === '4') timeMultiplier = 2.0;
+    else if (key === '5') timeMultiplier = 5.0;
+    else if (key === '6') timeMultiplier = 10.0;
+    else if (key === '7') timeMultiplier = 50.0;
+    else if (key === '8') timeMultiplier = 100.0;
+    else if (key === '9') timeMultiplier = 500.0;
+    else if (key === '0') timeMultiplier = 0.0;
+    
+    restrainTimeStep();
+  }
+}
+
+function mouseWheel(event) {
+
+  // Zoom control
+  zoomLevel *= event.delta > 0 ? 0.8 : 1.25;
+  zoomLevel = constrain(zoomLevel, ZOOM_MIN, ZOOM_MAX);
+}
+
