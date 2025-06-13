@@ -1,27 +1,87 @@
-const G = 6.67 * 10**-11; // Gravitational constant
+const G = 6.67e-11; // Gravitational constant
+
+let pi = 3.1415926535897932384626433832795028841971693993 //canvas isn't initialized yet can't use MATH
 
 const SUN = {
-  radius: 6.96265 * 10 ** 8,
-  mass: 1.9891 * 10 ** 30,
+  radius: 6.96265e8,
+  mass: 1.9891e30,
 };
 
 const EARTH = {
-  radius: 6.37 * 10**6,
-  mass: 5.98 * 10**24,
-  orbitRadius: 1.496 * 10 ** 11,
-  orbitSpeed: 2.978 * 10 ** 4,
+  radius: 6.37e6,
+  mass: 5.98e24,
+  orbitRadius: 1.496e11,
+  orbitSpeed: 2.978e4,
+  orbitAngle: 0
 };
+
 const MOON = {
-  radius: 1.7374 * 10 ** 6,
-  mass: 7.34767309 * 10 ** 22,
-  orbitRadius: 3.844 * 10 ** 8,
-  orbitSpeed: 1.022 * 10 ** 3
+  radius: 1.7374e6,
+  mass: 7.34767309e22,
+  orbitRadius: 3.844e8,
+  orbitSpeed: 1.022e3,
 };
+
+const MERCURY = {
+  radius: 2.4395e6,
+  mass: 3.30e23,
+  orbitRadius: 5.79e10,
+  orbitSpeed: 4.74e4,
+  orbitAngle: (2/3) * pi
+}
+
+const VENUS = {
+  radius: 6.052e6,
+  mass: 4.87e24,
+  orbitRadius: 1.089e11,
+  orbitSpeed: 3.5e4,
+  orbitAngle: (7/4) * pi
+}
+
+const MARS = {
+  radius: 3.396e6,
+  mass: 6.42e23,
+  orbitRadius: 2.28e11,
+  orbitSpeed: 2.41e4,
+  orbitAngle: (1/2) * pi
+}
+
+const JUPITER = {
+  radius: 7.1492e7,
+  mass: 1.898e27,
+  orbitRadius: 7.785e11,
+  orbitSpeed: 1.31e4,
+  orbitAngle: pi
+}
+
+const SATURN = {
+  radius: 6.0268e7,
+  mass: 5.68e26,
+  orbitRadius: 1.432e12,
+  orbitSpeed: 9.7e3,
+  orbitAngle: (3/2) * pi
+}
+
+const URANUS = {
+  radius: 2.5559e7,
+  mass: 8.68e25,
+  orbitRadius: 2.867e12,
+  orbitSpeed: 6.8e3,
+  orbitAngle: (5/4) * pi
+}
+
+const NEPTUNE = {
+  radius: 2.4764e7,
+  mass: 1.02e26,
+  orbitRadius: 4.515e12,
+  orbitSpeed: 5.4e3,
+  orbitAngle: (3/2) * pi
+}
 
 const ZOOM_MIN = 0.0000000000001;
 const ZOOM_MAX = 3;
 
-let sun, earth, moon;
+let sun, earth, moon, mercury, venus, mars, jupiter, saturn, uranus, neptune;
 let planets = [];
 let stations = [];
 let rocket;
@@ -47,7 +107,8 @@ function setup() {
     EARTH.radius + 70000,
     sun,
     EARTH.orbitRadius,
-    EARTH.orbitSpeed);
+    EARTH.orbitSpeed
+  );
   sun.moons.push(earth);
   
   moon = new Planet(
@@ -61,6 +122,90 @@ function setup() {
     MOON.orbitSpeed
   );
   earth.moons.push(moon);
+
+  mercury = new Planet(
+    sun.pos.x + MERCURY.orbitRadius,
+    sun.pos.y, MERCURY.radius,
+    MERCURY.mass,
+    0,
+    sun,
+    MERCURY.orbitRadius,
+    MERCURY.orbitSpeed,
+    MERCURY.orbitAngle
+  );
+  sun.moons.push(mercury);
+
+  venus = new Planet(
+    sun.pos.x + VENUS.orbitRadius,
+    sun.pos.y, VENUS.radius,
+    VENUS.mass,
+    0,
+    sun,
+    VENUS.orbitRadius,
+    VENUS.orbitSpeed,
+    VENUS.orbitAngle
+  );
+  sun.moons.push(venus);
+  
+  mars = new Planet(
+    sun.pos.x + MARS.orbitRadius,
+    sun.pos.y, MARS.radius,
+    MARS.mass,
+    0,
+    sun,
+    MARS.orbitRadius,
+    MARS.orbitSpeed,
+    MARS.orbitAngle
+  );
+  sun.moons.push(mars);
+
+  jupiter = new Planet(
+    sun.pos.x + JUPITER.orbitRadius,
+    sun.pos.y, JUPITER.radius,
+    JUPITER.mass,
+    0,
+    sun,
+    JUPITER.orbitRadius,
+    JUPITER.orbitSpeed,
+    JUPITER.orbitAngle
+  );
+  sun.moons.push(jupiter);
+
+  saturn = new Planet(
+    sun.pos.x + SATURN.orbitRadius,
+    sun.pos.y, SATURN.radius,
+    SATURN.mass,
+    0,
+    sun,
+    SATURN.orbitRadius,
+    SATURN.orbitSpeed,
+    SATURN.orbitAngle
+  );
+  sun.moons.push(saturn);
+
+  uranus = new Planet(
+    sun.pos.x + URANUS.orbitRadius,
+    sun.pos.y, URANUS.radius,
+    URANUS.mass,
+    0,
+    sun,
+    URANUS.orbitRadius,
+    URANUS.orbitSpeed,
+    URANUS.orbitAngle
+  );
+  sun.moons.push(uranus);
+
+  neptune = new Planet(
+    sun.pos.x + NEPTUNE.orbitRadius,
+    sun.pos.y, NEPTUNE.radius,
+    NEPTUNE.mass,
+    0,
+    sun,
+    NEPTUNE.orbitRadius,
+    NEPTUNE.orbitSpeed,
+    NEPTUNE.orbitAngle
+  );
+  sun.moons.push(neptune);
 
   planets.push(sun);
   
@@ -93,7 +238,7 @@ function draw() {
     planet.update(currentTimeStep);
     planet.draw();
   }
-  
+
   for (let station of stations) {
     station.draw();
   }
