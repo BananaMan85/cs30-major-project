@@ -324,10 +324,11 @@ function drawTutorial() {
   text("• Number keys 0-9 control time speed", width / 2, height / 2 - 20);
   text("• Watch your speed and altitude", width / 2, height / 2 + 10);
   text("• Yellow line shows your trajectory", width / 2, height / 2 + 40);
+  text("• Press ESC to pause", width / 2, height / 2 + 70);
   
   // Footer
   textSize(16);
-  text("Press ESC to return to menu", width / 2, height / 2 + 120);
+  text("Press ESC to return to menu", width / 2, height / 2 + 150);
 }
 
 function initializeSystem(){
@@ -515,7 +516,8 @@ function drawUI(){
   text(`Time Multiplier: ${timeMultiplier.toFixed(1)}x`, 10, 50);
   text(`Altitude: ${(p5.Vector.dist(rocket.pos, rocket.currentSOI.pos) - rocket.currentSOI.radius).toFixed(0)} m`, 10, 70);
   text(`Controls: 0-9 for speed, Mouse wheel for zoom, Arrows to steer/thrust`, 10, 90);
-  rocket.draw(100, 150, true); // Rotation indicator
+  text(`Press ESC to pause`, 10, 110);
+  rocket.draw(100, 170, true); // Rotation indicator
 }
 
 function setupPlanets(planets, startPlanet){
