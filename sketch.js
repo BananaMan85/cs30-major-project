@@ -536,7 +536,6 @@ class Rocket {
       // Calculate trajectory point relative to Earth's movement
       let planetMovement = p5.Vector.sub(initialPlanetPosition, dominantBody.pos);
       let trajectoryPoint = planetMovement.copy();
-      trajectoryPoints.push(trajectoryPoint);
       
       // Stop conditions
       let currentSOI = this.findSOI(createVector(0, 0), simPlanets);
@@ -547,15 +546,14 @@ class Rocket {
       if (step > 100) {
         // Check if we've completed an orbit
         if (p5.Vector.dist(trajectoryPoint, createVector(0, 0)) < 10000) {
+          trajectoryPoints.push(trajectoryPoint);
           trajectoryPoint.set(0, 0);
           trajectoryPoints.push(trajectoryPoint);
           break;
         }
       }
       
-      // if (p5.Vector.dist(createVector(0, 0), dominantBody.pos) > dominantBody.radius * 100) {
-      //   break; // Too far away
-      // }
+      trajectoryPoints.push(trajectoryPoint);
     }
 
     return {
