@@ -79,6 +79,7 @@ const NEPTUNE = {
   orbitAngle: (3/2) * pi
 }
 
+// Colours for menus
 const MENU_COLORS = {
   background: [5, 5, 15],
   primary: [100, 150, 255],
@@ -99,6 +100,7 @@ let sun, earth, moon, mercury, venus, mars, jupiter, saturn, uranus, neptune;
 let planets = [];
 let stations = [];
 let startingFuel = Infinity; // Don't run out of fuel
+let buttonSound;
 let rocketSound;
 let rocket;
 let rocketImage = {};
@@ -115,6 +117,7 @@ let currentTimeStep = 1.0;
 function preload(){
   //preload sounds
   rocketSound = loadSound('assets/rocket-thrust.mp3');
+  buttonSound = loadSound('assets/select.ogg');
   //preload all images
   backgroundImage = loadImage('assets/backgroundImage.png');
   rocketImage.noThrust = loadImage('assets/rocket.png');
@@ -535,6 +538,8 @@ function restrainTimeStep(){
 
 function selectMenuOption() {
   menuTransition = 1.0; // Menu fade
+
+  buttonSound.play();
   
   switch(menuSelection) {
     case 0:
@@ -846,7 +851,7 @@ class Rocket {
       this.fuel -= 0.2 * dt;
     }
     else {
-      rocketSound.stop();
+      rocketSound.stop(); // stop the sound when not accelerating
     }
 
     // Calculate velocity change
