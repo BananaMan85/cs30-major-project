@@ -74,6 +74,7 @@ function draw() {
   background(0);
   
   // Update time step
+  restrainTimeStep();
   currentTimeStep = baseTimeStep * timeMultiplier;
   totalTime += currentTimeStep;
   
@@ -120,6 +121,14 @@ function setupPlanets(planets){
   }
 }
 
+function restrainTimeStep(){
+  let altitide = p5.Vector.dist(rocket.pos, rocket.currentSOI.pos) - rocket.currentSOI.radius;
+
+  if (altitide < rocket.currentSOI.radius * (1/10)){
+    timeMultiplier = min(timeMultiplier, 1);
+  }
+}
+
 // Speed control with number keys
 function keyPressed() {
   if (key === '1') timeMultiplier = 0.1;
@@ -132,6 +141,8 @@ function keyPressed() {
   else if (key === '8') timeMultiplier = 100.0;
   else if (key === '9') timeMultiplier = 500.0;
   else if (key === '0') timeMultiplier = 0.0; // Pause
+
+  restrainTimeStep();
 }
 
 // Zoom control
