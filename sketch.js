@@ -78,16 +78,9 @@ function draw() {
   currentTimeStep = baseTimeStep * timeMultiplier;
   totalTime += currentTimeStep;
   
-  // UI display
-  fill('white');
-  strokeWeight(1);
-  textSize(16);
-  text(`Speed: ${rocket.vel.mag().toFixed(1)} m/s`, 10, 30);
-  text(`Time Multiplier: ${timeMultiplier.toFixed(1)}x`, 10, 50);
-  text(`Altitude: ${(p5.Vector.dist(rocket.pos, rocket.currentSOI.pos) - rocket.currentSOI.radius).toFixed(0)} m`, 10, 70);
-  text(`Controls: 0-9 for speed, Mouse wheel for zoom, Arrows to steer/thrust`, 10, 90);
   
   // Camera centered on rocket (which is at 0,0)
+  push();
   translate(width / 2, height / 2);
   scale(zoomLevel);
   
@@ -111,6 +104,22 @@ function draw() {
   rocket.checkLanding();
   rocket.takeOff();
   rocket.checkDocking();
+
+  pop();
+
+  drawUI();
+}
+
+function drawUI(){
+  // UI display
+  fill('white');
+  strokeWeight(1);
+  textSize(16);
+  text(`Speed: ${rocket.vel.mag().toFixed(1)} m/s`, 10, 30);
+  text(`Time Multiplier: ${timeMultiplier.toFixed(1)}x`, 10, 50);
+  text(`Altitude: ${(p5.Vector.dist(rocket.pos, rocket.currentSOI.pos) - rocket.currentSOI.radius).toFixed(0)} m`, 10, 70);
+  text(`Controls: 0-9 for speed, Mouse wheel for zoom, Arrows to steer/thrust`, 10, 90);
+  rocket.drawUIView(50, 150);
 }
 
 function setupPlanets(planets){
@@ -423,6 +432,22 @@ class Rocket {
     translate(this.pos.x, this.pos.y);
     rotate(this.angle + HALF_PI);
     fill(255, 0, 0);
+    noStroke();
+    triangle(-10, 15, 10, 15, 0, -15);
+    
+    // Thrust visualization
+    if (keyIsDown(UP_ARROW)) {
+      fill(255, 100, 0, 150);
+      triangle(-5, 15, 5, 15, 0, 25);
+    }
+    pop();
+  }
+
+  drawUIView(x, y){
+    push();
+    translate(x, y);
+    rotate(this.angle + HALF_PI);
+    fill(255, 0, 0, 100);
     noStroke();
     triangle(-10, 15, 10, 15, 0, -15);
     
