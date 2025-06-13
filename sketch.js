@@ -1,3 +1,7 @@
+// Major Project || Orbutal Navigator
+// William Sherwood
+// June 13, 2025
+
 const G = 6.67e-11; // Gravitational constant
 
 let pi = 3.1415926535897932384626433832795028841971693993; //canvas isn't initialized yet can't use MATH
