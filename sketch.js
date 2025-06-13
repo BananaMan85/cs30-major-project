@@ -99,6 +99,7 @@ let sun, earth, moon, mercury, venus, mars, jupiter, saturn, uranus, neptune;
 let planets = [];
 let stations = [];
 let startingFuel = Infinity; // Don't run out of fuel
+let rocketSound;
 let rocket;
 let rocketImage = {};
 let backgroundImage;
@@ -112,6 +113,8 @@ let timeMultiplier = 1.0;
 let currentTimeStep = 1.0;
 
 function preload(){
+  //preload sounds
+  rocketSound = loadSound('assets/rocket-thrust.mp3');
   //preload all images
   backgroundImage = loadImage('assets/backgroundImage.png');
   rocketImage.noThrust = loadImage('assets/rocket.png');
@@ -834,8 +837,16 @@ class Rocket {
       this.angle += 0.05 * dt;
     }
     if (keyIsDown(UP_ARROW) && this.fuel > 0) {
+
+      // Play the rocket sound
+      if (!rocketSound.playing){
+      rocketSound.play();
+    }
       this.applyThrust();
       this.fuel -= 0.2 * dt;
+    }
+    else {
+      rocketSound.stop();
     }
 
     // Calculate velocity change
