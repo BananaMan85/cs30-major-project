@@ -1,4 +1,4 @@
-// Major Project || Orbutal Navigator
+// Major Project || Orbital Navigator
 // William Sherwood
 // June 13, 2025
 
