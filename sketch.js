@@ -948,17 +948,17 @@ function selectMenuOption() {
   buttonSound.play();
   
   switch(menuSelection) {
-    case 0:
-      gameState = 'GAME';
-      timeMultiplier = 1;
-      initializeSystem(); // Initialize the game when starting
-      break;
-    case 1:
-      gameState = 'SETTINGS';
-      break;
-    case 2:
-      gameState = 'TUTORIAL';
-      break;
+  case 0:
+    gameState = 'GAME';
+    timeMultiplier = 1;
+    initializeSystem(); // Initialize the game when starting
+    break;
+  case 1:
+    gameState = 'SETTINGS';
+    break;
+  case 2:
+    gameState = 'TUTORIAL';
+    break;
   }
 }
 
