@@ -33,7 +33,7 @@ const MERCURY = {
   orbitRadius: 5.79e10,
   orbitSpeed: 4.74e4,
   orbitAngle: (2/3) * pi
-}
+};
 
 const VENUS = {
   radius: 6.052e6,
@@ -41,7 +41,7 @@ const VENUS = {
   orbitRadius: 1.089e11,
   orbitSpeed: 3.5e4,
   orbitAngle: (7/4) * pi
-}
+};
 
 const MARS = {
   radius: 3.396e6,
@@ -49,7 +49,7 @@ const MARS = {
   orbitRadius: 2.28e11,
   orbitSpeed: 2.41e4,
   orbitAngle: (1/2) * pi
-}
+};
 
 const JUPITER = {
   radius: 7.1492e7,
@@ -57,7 +57,7 @@ const JUPITER = {
   orbitRadius: 7.785e11,
   orbitSpeed: 1.31e4,
   orbitAngle: pi
-}
+};
 
 const SATURN = {
   radius: 6.0268e7,
@@ -65,7 +65,7 @@ const SATURN = {
   orbitRadius: 1.432e12,
   orbitSpeed: 9.7e3,
   orbitAngle: (3/2) * pi
-}
+};
 
 const URANUS = {
   radius: 2.5559e7,
@@ -73,7 +73,7 @@ const URANUS = {
   orbitRadius: 2.867e12,
   orbitSpeed: 6.8e3,
   orbitAngle: (5/4) * pi
-}
+};
 
 const NEPTUNE = {
   radius: 2.4764e7,
@@ -81,7 +81,7 @@ const NEPTUNE = {
   orbitRadius: 4.515e12,
   orbitSpeed: 5.4e3,
   orbitAngle: (3/2) * pi
-}
+};
 
 // Colours for menus
 const MENU_COLORS = {
@@ -150,23 +150,23 @@ function draw() {
 
   // determine which part of the game is running right now
   switch(gameState) {
-    case 'MENU':
-      drawMainMenu();
-      break;
-    case 'GAME':
-      runGame();
-      break;
-    case 'PAUSED':
-      timeMultiplier = 0;
-      runGame();
-      drawPauseMenu();
-      break;
-    case 'SETTINGS':
-      drawSettingsMenu();
-      break;
-    case 'TUTORIAL':
-      drawTutorial();
-      break;
+  case 'MENU':
+    drawMainMenu();
+    break;
+  case 'GAME':
+    runGame();
+    break;
+  case 'PAUSED':
+    timeMultiplier = 0;
+    runGame();
+    drawPauseMenu();
+    break;
+  case 'SETTINGS':
+    drawSettingsMenu();
+    break;
+  case 'TUTORIAL':
+    drawTutorial();
+    break;
   }
 
   pop();
@@ -399,8 +399,8 @@ class Rocket {
 
       // Play the rocket sound
       if (!rocketSound.playing){
-      rocketSound.play();
-    }
+        rocketSound.play();
+      }
       this.applyThrust();
       this.fuel -= 0.2 * dt;
     }
@@ -539,7 +539,7 @@ class Rocket {
       trajectoryPoints.push(trajectoryPoint);
     }
 
-    return trajectoryPoints
+    return trajectoryPoints;
   }
 
   drawTrajectory() {
